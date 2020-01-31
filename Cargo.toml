@@ -21,9 +21,9 @@ exclude = [
 edition = "2018"
 
 [dependencies]
-cortex-m = "0.5.8"
+cortex-m = "0.6.1"
 nb = "0.1.1"
-stm32wb-pac = "0.1"
+stm32wb-pac = "0.2"
 as-slice = "0.1"
 
 [dependencies.cast]
@@ -42,8 +42,10 @@ version = "1.1"
 version = "0.2.3"
 features = ["unproven"]
 
-[package.metadata.docs.rs]
-features = ["rt"]
+[dependencies.stm32-usbd]
+version = "0.5.0"
+features = ["ram_access_2x16"]
+optional = true
 
 [features]
 rt = ["stm32wb-pac/rt"]
@@ -51,8 +53,11 @@ unproven = ["embedded-hal/unproven"]
 
 [dev-dependencies]
 panic-halt = "0.2.0"
+panic-semihosting = "0.5.0"
 cortex-m-semihosting = "0.3.1"
 cortex-m-rt = "0.6.6"
+usb-device = "0.2.3"
+usbd-serial = "0.1.0"
 
 [profile.dev]
 incremental = false
