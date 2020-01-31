@@ -1,5 +1,6 @@
 use crate::time::Hertz;
 
+#[derive(Debug)]
 pub struct Config {
     pub(crate) sysclk_src: SysClkSrc,
 
@@ -28,7 +29,7 @@ impl Default for Config {
 }
 
 impl Config {
-    pub fn new(mux: SysClockSrc) -> Self {
+    pub fn new(mux: SysClkSrc) -> Self {
         Config::default().clock_src(mux)
     }
 
@@ -76,6 +77,7 @@ impl Config {
 }
 
 /// System clock (SYSCLK) source selection.
+#[derive(Debug)]
 pub enum SysClkSrc {
     /// Multi-speed internal RC oscillator
     Msi(MsiRange),
@@ -125,13 +127,14 @@ impl Default for MsiRange {
 }
 
 /// HSE input divider.
+#[derive(Debug, Clone)]
 pub enum HseDivider {
     NotDivided,
     Div2,
 }
 
 /// PLL configuration.
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone)]
 pub struct PllConfig {
     source: PllSrcMux,
 
@@ -156,6 +159,7 @@ impl Default for PllConfig {
 }
 
 /// PLL input frequency source.
+#[derive(Debug, Clone)]
 pub enum PllSrcMux {
     Msi(MsiRange),
     Hsi,

@@ -21,8 +21,8 @@ pub struct Rcc {
 }
 
 impl Rcc {
-    pub fn freeze(self, config: config::Config) -> Self {
-
+    pub fn freeze(self, _config: config::Config) -> Self {
+        self
     }
 }
 
