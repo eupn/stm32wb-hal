@@ -1,12 +1,10 @@
 //! Reset and Clock Control
 
-use core::cmp;
-
 mod config;
 
 pub use config::*;
 
-use crate::stm32::{rcc, RCC};
+use crate::stm32::RCC;
 use cast::u32;
 
 use crate::flash::ACR;

@@ -1,5 +1,3 @@
-use crate::time::Hertz;
-
 #[derive(Debug)]
 pub struct Config {
     pub(crate) sysclk_src: SysClkSrc,
