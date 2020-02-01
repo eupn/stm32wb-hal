@@ -114,4 +114,8 @@ impl Clocks {
     pub fn sysclk(&self) -> Hertz {
         self.sysclk
     }
+
+    pub fn pclk1(&self) -> Hertz {
+        self.pclk1
+    }
 }
