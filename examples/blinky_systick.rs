@@ -1,4 +1,4 @@
-//! Blinks an LED
+//! Blinks an LED with a SysTick as a delay timer.
 
 #![deny(unsafe_code)]
 #![deny(warnings)]
@@ -40,6 +40,7 @@ fn main() -> ! {
 }
 
 #[exception]
+#[allow(non_snake_case)]
 fn HardFault(ef: &ExceptionFrame) -> ! {
     panic!("{:#?}", ef);
 }
