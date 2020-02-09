@@ -23,3 +23,4 @@ pub mod gpio;
 pub mod prelude;
 pub mod rcc;
 pub mod time;
+pub mod usb;
