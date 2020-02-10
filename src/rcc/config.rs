@@ -32,7 +32,9 @@ impl Config {
     }
 
     pub fn pll() -> Self {
-        Config::default().clock_src(SysClkSrc::Pll(PllConfig::default()))
+        Config::default()
+            .clock_src(SysClkSrc::Pll(PllSrcMux::Msi(MsiRange::default())))
+            .pll_cfg(PllConfig::default())
     }
 
     pub fn hsi() -> Self {
@@ -87,7 +89,7 @@ pub enum SysClkSrc {
     HseSys(HseDivider),
 
     /// Use PLL.
-    Pll(PllConfig),
+    Pll(PllSrcMux),
 }
 
 #[derive(Debug, Clone)]
@@ -134,24 +136,21 @@ pub enum HseDivider {
 /// PLL configuration.
 #[derive(Debug, Clone)]
 pub struct PllConfig {
-    source: PllSrcMux,
-
-    m: u8,
-    n: u8,
-    r: u8,
-    q: Option<u8>,
-    p: Option<u8>,
+    pub m: u8,
+    pub n: u8,
+    pub r: u8,
+    pub q: Option<u8>,
+    pub p: Option<u8>,
 }
 
 impl Default for PllConfig {
     fn default() -> Self {
         PllConfig {
-            source: PllSrcMux::Msi(MsiRange::default()),
             m: 1,
             n: 8,
             r: 2,
-            q: Some(2),
-            p: Some(2),
+            q: None,
+            p: None,
         }
     }
 }
@@ -175,7 +174,7 @@ pub enum ApbDivider {
 
 /// CPU1, CPU2 HPRE (prescaler).
 /// RM0434 page 230.
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub enum HDivider {
     NotDivided = 0,
     Div2 = 0b1000,
