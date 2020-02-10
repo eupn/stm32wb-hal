@@ -13,10 +13,10 @@ extern crate stm32wb_hal as hal;
 
 use embedded_hal::digital::v2::OutputPin;
 
-use crate::hal::prelude::*;
 use crate::hal::delay::Delay;
-use crate::rt::ExceptionFrame;
+use crate::hal::prelude::*;
 use crate::rt::entry;
+use crate::rt::ExceptionFrame;
 
 #[entry]
 fn main() -> ! {
@@ -28,7 +28,9 @@ fn main() -> ! {
 
     // On STM32WB55-NUCLEO a green LED is connected to the pin PB0
     let mut gpiob = dp.GPIOB.split(&mut rcc);
-    let mut led = gpiob.pb0.into_push_pull_output(&mut gpiob.moder, &mut gpiob.otyper);
+    let mut led = gpiob
+        .pb0
+        .into_push_pull_output(&mut gpiob.moder, &mut gpiob.otyper);
 
     let mut timer = Delay::new(cp.SYST, hal::rcc::Clocks::default());
     loop {

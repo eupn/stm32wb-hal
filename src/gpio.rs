@@ -2,8 +2,8 @@
 
 use core::marker::PhantomData;
 
-use crate::stm32::{EXTI, SYSCFG};
 use crate::rcc::Rcc;
+use crate::stm32::{EXTI, SYSCFG};
 
 /// Extension trait to split a GPIO peripheral in independent pins and registers
 pub trait GpioExt {
@@ -734,4 +734,3 @@ gpio!(GPIOH, gpioh, gpioh, gpiohen, gpiohrst, PHx, 5, [
     PH1: (ph1, 1, Input<Floating>, AFRL, exticr1),
     PH3: (ph3, 3, Input<Floating>, AFRL, exticr1),
 ]);
-

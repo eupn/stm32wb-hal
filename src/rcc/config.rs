@@ -21,7 +21,7 @@ impl Default for Config {
             apb1_div: ApbDivider::NotDivided,
             apb2_div: ApbDivider::NotDivided,
             cpu1_hdiv: HDivider::NotDivided,
-            cpu2_hdiv: HDivider::NotDivided
+            cpu2_hdiv: HDivider::NotDivided,
         }
     }
 }

@@ -18,8 +18,8 @@ pub mod datetime;
 pub mod delay;
 
 pub mod flash;
-pub mod i2c;
 pub mod gpio;
+pub mod i2c;
 pub mod prelude;
 pub mod rcc;
 pub mod time;

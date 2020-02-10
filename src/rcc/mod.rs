@@ -26,15 +26,9 @@ impl Rcc {
     pub fn freeze(mut self, config: config::Config, acr: &mut ACR) -> Self {
         // Select system clock source
         match &config.sysclk_src {
-            SysClkSrc::Msi(msi_range) => {
-
-            },
-            SysClkSrc::Hsi => {
-
-            },
-            SysClkSrc::HseSys(hse_div) => {
-
-            },
+            SysClkSrc::Msi(msi_range) => {}
+            SysClkSrc::Hsi => {}
+            SysClkSrc::HseSys(hse_div) => {}
             SysClkSrc::Pll(src) => {
                 self.configure_and_wait_for_pll(&config.pll_cfg, src);
                 if let Some(pllclk) = self.clocks.pllclk {
@@ -42,12 +36,12 @@ impl Rcc {
                 }
 
                 // Configure CPU1 and CPU2 dividers
-                self.rb.cfgr.modify(|_r, w| unsafe {
-                   w.hpre().bits(config.cpu1_hdiv as u8)
-                });
-                self.rb.extcfgr.modify(|_r, w| unsafe {
-                   w.c2hpre().bits(config.cpu2_hdiv as u8)
-                });
+                self.rb
+                    .cfgr
+                    .modify(|_r, w| unsafe { w.hpre().bits(config.cpu1_hdiv as u8) });
+                self.rb
+                    .extcfgr
+                    .modify(|_r, w| unsafe { w.c2hpre().bits(config.cpu2_hdiv as u8) });
 
                 // Configure FLASH wait states
                 acr.acr().write(|w| unsafe {
@@ -63,13 +57,11 @@ impl Rcc {
                 });
 
                 // Configure SYSCLK mux to use PLL clock
-                self.rb.cfgr.modify(|_r, w| unsafe {
-                   w.sw().bits(0b11)
-                });
+                self.rb.cfgr.modify(|_r, w| unsafe { w.sw().bits(0b11) });
 
                 // Wait for SYSCLK to switch
-                while self.rb.cfgr.read().sw() != 0b11 {};
-            },
+                while self.rb.cfgr.read().sw() != 0b11 {}
+            }
         }
 
         self
@@ -83,10 +75,8 @@ impl Rcc {
 
                 let f_input = 0;
                 (f_input, 0b01)
-            },
-            PllSrcMux::Hsi => {
-                (HSI_FREQ, 0b10)
-            },
+            }
+            PllSrcMux::Hsi => (HSI_FREQ, 0b10),
             PllSrcMux::Hse(div) => {
                 let (divided, f_input) = match div {
                     HseDivider::NotDivided => (false, HSE_FREQ),
@@ -94,13 +84,14 @@ impl Rcc {
                 };
 
                 // Configure HSE divider and enable it
-                self.rb.cr
+                self.rb
+                    .cr
                     .modify(|_, w| w.hsepre().bit(divided).hseon().set_bit());
                 // Wait for HSE startup
                 while !self.rb.cr.read().hserdy().bit_is_set() {}
 
                 (f_input, 0b11)
-            },
+            }
         };
 
         let pllp = config.p.map(|p| {
@@ -152,15 +143,15 @@ impl Rcc {
         }
 
         // Set PLL coefficients
-        self.rb.pllcfgr
-            .modify(|_, w| unsafe {
-                w.pllsrc().bits(src_bits)
-                    .pllm().bits(pllm)
-                    .plln().bits(plln)
-                    .pllr().bits(pllr).pllren().set_bit()
-                    .pllp().bits(pllp.unwrap_or(1)).pllpen().bit(pllp.is_some())
-                    .pllq().bits(pllq.unwrap_or(1)).pllqen().bit(pllq.is_some())
-            });
+        self.rb.pllcfgr.modify(|_, w| unsafe {
+            #[rustfmt::skip]
+            w.pllsrc().bits(src_bits)
+            .pllm().bits(pllm)
+            .plln().bits(plln)
+            .pllr().bits(pllr).pllren().set_bit()
+            .pllp().bits(pllp.unwrap_or(1)).pllpen().bit(pllp.is_some())
+            .pllq().bits(pllq.unwrap_or(1)).pllqen().bit(pllq.is_some())
+        });
 
         // Enable PLL and wait for setup
         self.rb.cr.modify(|_, w| w.pllon().set_bit());
@@ -253,7 +244,7 @@ impl Default for Clocks {
             lptim2: 4.mhz(),
             pllclk: None,
             pllq: None,
-            pllp: None
+            pllp: None,
         }
     }
 }

@@ -1,13 +1,13 @@
 //! Inter-Integrated Circuit (I2C) bus
 
-use cast::u8;
 use crate::stm32::{I2C1, I2C3};
+use cast::u8;
 
-use crate::gpio::gpioa::{PA7, PA9, PA10};
-use crate::gpio::gpiob::{PB4, PB6, PB7, PB8, PB9, PB10, PB11, PB13, PB14};
+use crate::gpio::gpioa::{PA10, PA7, PA9};
+use crate::gpio::gpiob::{PB10, PB11, PB13, PB14, PB4, PB6, PB7, PB8, PB9};
 use crate::gpio::gpioc::{PC0, PC1};
-use crate::gpio::{AF4, Alternate, OpenDrain, Output};
-use crate::hal::blocking::i2c::{Write, WriteRead, Read};
+use crate::gpio::{Alternate, OpenDrain, Output, AF4};
+use crate::hal::blocking::i2c::{Read, Write, WriteRead};
 use crate::rcc::Rcc;
 use crate::time::Hertz;
 
@@ -33,7 +33,6 @@ pub unsafe trait SclPin<I2C> {}
 
 /// SDA pin -- DO NOT IMPLEMENT THIS TRAIT
 pub unsafe trait SdaPin<I2C> {}
-
 
 unsafe impl SclPin<I2C1> for PA9<Alternate<AF4, Output<OpenDrain>>> {}
 unsafe impl SdaPin<I2C1> for PA10<Alternate<AF4, Output<OpenDrain>>> {}
