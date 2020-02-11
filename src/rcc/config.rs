@@ -1,14 +1,19 @@
+use super::mux::*;
+
 #[derive(Debug)]
 pub struct Config {
     pub(crate) sysclk_src: SysClkSrc,
 
     pub(crate) pll_cfg: PllConfig,
 
-    pub(crate) apb1_div: ApbDivider, // Max 64 MHz
-    pub(crate) apb2_div: ApbDivider, // Max 64 MHz
+    pub(crate) apb1_div: ApbDivider,
+    pub(crate) apb2_div: ApbDivider,
 
-    pub(crate) cpu1_hdiv: HDivider, // Max 64 MHz
-    pub(crate) cpu2_hdiv: HDivider, // Max 32 MHz
+    pub(crate) cpu1_hdiv: HDivider,
+    pub(crate) cpu2_hdiv: HDivider,
+    pub(crate) hclk_hdiv: HDivider,
+
+    pub(crate) usb_src: UsbClkSrc,
 }
 
 impl Default for Config {
@@ -22,6 +27,8 @@ impl Default for Config {
             apb2_div: ApbDivider::NotDivided,
             cpu1_hdiv: HDivider::NotDivided,
             cpu2_hdiv: HDivider::NotDivided,
+            hclk_hdiv: HDivider::NotDivided,
+            usb_src: UsbClkSrc::default(),
         }
     }
 }
@@ -33,7 +40,7 @@ impl Config {
 
     pub fn pll() -> Self {
         Config::default()
-            .clock_src(SysClkSrc::Pll(PllSrcMux::Msi(MsiRange::default())))
+            .clock_src(SysClkSrc::Pll(PllSrc::Msi(MsiRange::default())))
             .pll_cfg(PllConfig::default())
     }
 
@@ -74,22 +81,11 @@ impl Config {
         self.cpu2_hdiv = div;
         self
     }
-}
 
-/// System clock (SYSCLK) source selection.
-#[derive(Debug)]
-pub enum SysClkSrc {
-    /// Multi-speed internal RC oscillator
-    Msi(MsiRange),
-
-    /// 16 MHz internal RC
-    Hsi,
-
-    /// Use HSE directly, without PLL.
-    HseSys(HseDivider),
-
-    /// Use PLL.
-    Pll(PllSrcMux),
+    pub fn usb_src(mut self, src: UsbClkSrc) -> Self {
+        self.usb_src = src;
+        self
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -155,21 +151,25 @@ impl Default for PllConfig {
     }
 }
 
-/// PLL input frequency source.
-#[derive(Debug, Clone)]
-pub enum PllSrcMux {
-    Msi(MsiRange),
-    Hsi,
-    Hse(HseDivider),
+#[derive(Debug, Copy, Clone)]
+pub enum ApbDivider {
+    NotDivided = 0b000,
+    Div2 = 0b100,
+    Div4 = 0b101,
+    Div8 = 0b110,
+    Div16 = 0b111,
 }
 
-#[derive(Debug)]
-pub enum ApbDivider {
-    NotDivided = 1,
-    Div2 = 2,
-    Div4 = 4,
-    Div8 = 8,
-    Div16 = 16,
+impl ApbDivider {
+    pub fn divisor(&self) -> u32 {
+        match self {
+            ApbDivider::NotDivided => 1,
+            ApbDivider::Div2 => 2,
+            ApbDivider::Div4 => 4,
+            ApbDivider::Div8 => 8,
+            ApbDivider::Div16 => 16,
+        }
+    }
 }
 
 /// CPU1, CPU2 HPRE (prescaler).
@@ -190,4 +190,26 @@ pub enum HDivider {
     Div128 = 0b1101,
     Div256 = 0b1110,
     Div512 = 0b1111,
+}
+
+impl HDivider {
+    /// Returns division value
+    pub fn divisor(&self) -> u32 {
+        match self {
+            HDivider::NotDivided => 1,
+            HDivider::Div2 => 2,
+            HDivider::Div3 => 3,
+            HDivider::Div4 => 4,
+            HDivider::Div5 => 5,
+            HDivider::Div6 => 6,
+            HDivider::Div10 => 10,
+            HDivider::Div8 => 8,
+            HDivider::Div16 => 16,
+            HDivider::Div32 => 32,
+            HDivider::Div64 => 64,
+            HDivider::Div128 => 128,
+            HDivider::Div256 => 256,
+            HDivider::Div512 => 512,
+        }
+    }
 }
