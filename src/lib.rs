@@ -21,6 +21,7 @@ pub mod flash;
 pub mod gpio;
 pub mod i2c;
 pub mod prelude;
+pub mod pwr;
 pub mod rcc;
 pub mod time;
 pub mod usb;
