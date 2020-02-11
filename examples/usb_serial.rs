@@ -7,11 +7,11 @@ extern crate stm32wb_hal as hal;
 
 use cortex_m_rt::{entry, exception, ExceptionFrame};
 
-use hal::pac as pac;
-use hal::usb::{UsbBus, Peripheral};
+use hal::flash::FlashExt;
+use hal::pac;
 use hal::prelude::*;
 use hal::rcc::{ApbDivider, Config, HDivider, HseDivider, PllConfig, PllSrc, SysClkSrc, UsbClkSrc};
-use hal::flash::FlashExt;
+use hal::usb::{Peripheral, UsbBus};
 
 use usb_device::prelude::*;
 use usbd_serial::{SerialPort, USB_CLASS_CDC};

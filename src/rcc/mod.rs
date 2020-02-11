@@ -28,8 +28,8 @@ impl Rcc {
     pub fn apply_clock_config(mut self, config: config::Config, acr: &mut ACR) -> Self {
         // Select system clock source
         let sysclk_bits = match &config.sysclk_src {
-            SysClkSrc::Msi(_msi_range) => { todo!() }
-            SysClkSrc::Hsi => { todo!() }
+            SysClkSrc::Msi(_msi_range) => todo!(),
+            SysClkSrc::Hsi => todo!(),
             SysClkSrc::HseSys(hse_div) => {
                 self.clocks.sysclk = match hse_div {
                     HseDivider::NotDivided => HSE_FREQ.hz(),
@@ -62,7 +62,9 @@ impl Rcc {
         });
 
         // Configure SYSCLK mux to use PLL clock
-        self.rb.cfgr.modify(|_r, w| unsafe { w.sw().bits(sysclk_bits) });
+        self.rb
+            .cfgr
+            .modify(|_r, w| unsafe { w.sw().bits(sysclk_bits) });
 
         // Wait for SYSCLK to switch
         while self.rb.cfgr.read().sw() != sysclk_bits {}
@@ -75,26 +77,24 @@ impl Rcc {
         self.rb
             .cfgr
             .modify(|_r, w| unsafe { w.hpre().bits(config.cpu1_hdiv as u8) });
-        self.rb
-            .extcfgr
-            .modify(|_r, w| unsafe {
-                w
-                    .c2hpre().bits(config.cpu2_hdiv as u8)
-                    .shdhpre().bits(config.hclk_hdiv as u8)
-            });
+        self.rb.extcfgr.modify(|_r, w| unsafe {
+            w.c2hpre()
+                .bits(config.cpu2_hdiv as u8)
+                .shdhpre()
+                .bits(config.hclk_hdiv as u8)
+        });
 
         // Wait for prescaler values to apply
         while !self.rb.cfgr.read().hpref().bit_is_set() {}
         while !self.rb.extcfgr.read().shdhpref().bit_is_set() {}
 
         // Apply PCLK1(APB1) / PCLK2(APB2) values
-        self.rb
-            .cfgr
-            .modify(|_r, w| unsafe {
-               w
-                   .ppre1().bits(config.apb1_div as u8)
-                   .ppre2().bits(config.apb2_div as u8)
-            });
+        self.rb.cfgr.modify(|_r, w| unsafe {
+            w.ppre1()
+                .bits(config.apb1_div as u8)
+                .ppre2()
+                .bits(config.apb2_div as u8)
+        });
 
         while !self.rb.cfgr.read().ppre1f().bit_is_set() {}
         while !self.rb.cfgr.read().ppre2f().bit_is_set() {}
@@ -103,18 +103,16 @@ impl Rcc {
         self.clocks.pclk2 = (self.clocks.hclk1.0 / config.apb2_div.divisor()).hz();
 
         // Select USB clock source
-        self.rb.ccipr.modify(|_r, w| unsafe {
-            w.clk48sel().bits(config.usb_src as u8)
-        });
+        self.rb
+            .ccipr
+            .modify(|_r, w| unsafe { w.clk48sel().bits(config.usb_src as u8) });
 
         self.clocks.clk48 = match config.usb_src {
             UsbClkSrc::Hsi48 => todo!(),
 
             UsbClkSrc::PllSai1Q => todo!(),
 
-            UsbClkSrc::PllQ => {
-                self.clocks.pllq
-            },
+            UsbClkSrc::PllQ => self.clocks.pllq,
             UsbClkSrc::Msi => todo!(),
         };
 

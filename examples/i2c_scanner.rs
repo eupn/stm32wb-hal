@@ -13,10 +13,10 @@ extern crate stm32wb_hal as hal;
 
 use cortex_m_semihosting::hprintln;
 
-use crate::hal::prelude::*;
 use crate::hal::i2c::I2c;
-use crate::rt::ExceptionFrame;
+use crate::hal::prelude::*;
 use crate::rt::entry;
+use crate::rt::ExceptionFrame;
 
 #[entry]
 fn main() -> ! {
