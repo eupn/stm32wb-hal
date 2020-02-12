@@ -208,6 +208,15 @@ impl Rcc {
         self.rb.cr.modify(|_, w| w.pllon().set_bit());
         while !self.rb.cr.read().pllrdy().bit_is_set() {}
     }
+
+    /// Enables or disables IPCC peripheral clock.
+    pub fn set_ipcc(&mut self, enabled: bool) {
+        self.rb.ahb3enr.modify(|_, w| w.ipccen().bit(enabled));
+
+        // Single memory access delay after peripheral is enabled.
+        // This dummy read uses `read_volatile` internally, so it shouldn't be removed by an optimizer.
+        let _ = self.rb.ahb3enr.read().ipccen();
+    }
 }
 
 /// Extension trait that constrains the `RCC` peripheral
