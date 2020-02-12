@@ -8,8 +8,11 @@ MEMORY
 /* Place stack at the end of SRAM1 */
 _stack_start = ORIGIN(RAM) + LENGTH(RAM);
 
+/*
+ * Scatter the mailbox interface memory sections in shared memory
+ */
 SECTIONS {
-    S_TL_REF_TABLE          (NOLOAD): { *(TL_REF_TABLE) } >RAM_SHARED
+    S_TL_REF_TABLE                     (NOLOAD) : { *(TL_REF_TABLE) } >RAM_SHARED
 
     S_TL_DEVICE_INFO_TABLE  0x20030128 (NOLOAD) : { *(S_TL_DEVICE_INFO_TABLE) } >RAM_SHARED
     S_TL_BLE_TABLE          0x20030148 (NOLOAD) : { *(S_TL_BLE_TABLE) } >RAM_SHARED
