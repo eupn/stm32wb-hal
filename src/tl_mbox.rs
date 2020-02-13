@@ -116,26 +116,26 @@ struct RefTable {
 #[link_section = "S_TL_REF_TABLE"]
 static mut TL_REF_TABLE: MaybeUninit<RefTable> = MaybeUninit::uninit();
 
-#[link_section = "S_TL_DEVICE_INFO_TABLE"]
+#[link_section = "MB_MEM1"]
 #[no_mangle]
 static mut TL_DEVICE_INFO_TABLE: MaybeUninit<DeviceInfoTable> = MaybeUninit::uninit();
 
-#[link_section = "S_TL_BLE_TABLE"]
+#[link_section = "MB_MEM1"]
 static mut TL_BLE_TABLE: MaybeUninit<BleTable> = MaybeUninit::uninit();
 
-#[link_section = "S_TL_THREAD_TABLE"]
+#[link_section = "MB_MEM1"]
 static mut TL_THREAD_TABLE: MaybeUninit<ThreadTable> = MaybeUninit::uninit();
 
-#[link_section = "S_TL_SYS_TABLE"]
+#[link_section = "MB_MEM1"]
 static mut TL_SYS_TABLE: MaybeUninit<SysTable> = MaybeUninit::uninit();
 
-#[link_section = "S_TL_MEM_MANAGER_TABLE"]
+#[link_section = "MB_MEM1"]
 static mut TL_MEM_MANAGER_TABLE: MaybeUninit<MemManagerTable> = MaybeUninit::uninit();
 
-#[link_section = "S_TL_TRACES_TABLE"]
+#[link_section = "MB_MEM1"]
 static mut TL_TRACES_TABLE: MaybeUninit<TracesTable> = MaybeUninit::uninit();
 
-#[link_section = "S_TL_MAC_802_15_4_TABLE"]
+#[link_section = "MB_MEM1"]
 static mut TL_MAC_802_15_4_TABLE: MaybeUninit<Mac802154Table> = MaybeUninit::uninit();
 
 #[derive(Debug)]
@@ -145,10 +145,10 @@ struct LinkedListNode {
     prev: *const LinkedListNode,
 }
 
-#[link_section = "S_FREE_BUF_QUEUE"]
+#[link_section = "MB_MEM1"]
 static mut FREE_BUF_QUEUE: MaybeUninit<LinkedListNode> = MaybeUninit::uninit();
 
-#[link_section = "S_TRACES_EVT_QUEUE"]
+#[link_section = "MB_MEM1"]
 static mut TRACES_EVT_QUEUE: MaybeUninit<LinkedListNode> = MaybeUninit::uninit();
 
 #[repr(C, packed)]
@@ -169,13 +169,13 @@ const TL_PACKET_HEADER_SIZE: usize = core::mem::size_of::<PacketHeader>();
 const TL_EVT_HEADER_SIZE: usize = 3;
 const TL_CS_EVT_SIZE: usize = core::mem::size_of::<CsEvent>();
 
-#[link_section = "S_CS_BUFFER"]
+#[link_section = "MB_MEM2"]
 static mut CS_BUFFER: MaybeUninit<[u8; TL_PACKET_HEADER_SIZE + TL_EVT_HEADER_SIZE + TL_CS_EVT_SIZE]> = MaybeUninit::uninit();
 
-#[link_section = "S_EVT_QUEUE"]
+#[link_section = "MB_MEM2"]
 static mut EVT_QUEUE: MaybeUninit<LinkedListNode> = MaybeUninit::uninit();
 
-#[link_section = "S_SYSTEM_EVT_QUEUE"]
+#[link_section = "MB_MEM2"]
 static mut SYSTEM_EVT_QUEUE: MaybeUninit<LinkedListNode> = MaybeUninit::uninit();
 
 pub mod cpu1_channels {

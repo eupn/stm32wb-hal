@@ -11,6 +11,7 @@ _stack_start = ORIGIN(RAM) + LENGTH(RAM);
 /*
  * Scatter the mailbox interface memory sections in shared memory
  */
+ /* Experimental
 SECTIONS {
     S_TL_REF_TABLE                     (NOLOAD) : { *(TL_REF_TABLE) } >RAM_SHARED
 
@@ -29,4 +30,10 @@ SECTIONS {
 
     S_EVT_QUEUE             0x20030a08 (NOLOAD) : { *(S_EVT_QUEUE) } >RAM_SHARED
     S_SYSTEM_EVT_QUEUE      0x20030a20 (NOLOAD) : { *(S_SYSTEM_EVT_QUEUE) } >RAM_SHARED
+}
+*/
+SECTIONS {
+    S_TL_REF_TABLE    (NOLOAD) : { *(TL_REF_TABLE) } >RAM_SHARED
+    MB_MEM1           (NOLOAD) : { *(MB_MEM1) } >RAM_SHARED
+    MB_MEM2           (NOLOAD) : { *(MB_MEM2) } >RAM_SHARED
 }
