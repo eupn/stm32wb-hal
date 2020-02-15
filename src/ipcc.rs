@@ -89,7 +89,7 @@ impl Ipcc {
     }
 
     pub fn c1_get_rx_channel(&self, channel: IpccChannel) -> bool {
-        match channel {
+        !match channel {
             IpccChannel::Channel1 => self.rb.c1mr.read().ch1om().bit(),
             IpccChannel::Channel2 => self.rb.c1mr.read().ch2om().bit(),
             IpccChannel::Channel3 => self.rb.c1mr.read().ch3om().bit(),
@@ -124,7 +124,7 @@ impl Ipcc {
     }
 
     pub fn c1_get_tx_channel(&self, channel: IpccChannel) -> bool {
-        match channel {
+        !match channel {
             IpccChannel::Channel1 => self.rb.c1mr.read().ch1fm().bit(),
             IpccChannel::Channel2 => self.rb.c1mr.read().ch2fm().bit(),
             IpccChannel::Channel3 => self.rb.c1mr.read().ch3fm().bit(),
@@ -221,7 +221,7 @@ impl Ipcc {
     }
 
     pub fn is_rx_pending(&self, channel: IpccChannel) -> bool {
-        !self.c2_is_active_flag(channel) && self.c1_get_rx_channel(channel)
+        self.c2_is_active_flag(channel) && self.c1_get_rx_channel(channel)
     }
 }
 
