@@ -1,5 +1,3 @@
-use crate::ipcc::IpccExt;
-use crate::rcc::Rcc;
 use core::mem::MaybeUninit;
 
 mod channels;
@@ -9,7 +7,6 @@ pub mod sys;
 mod unsafe_linked_list;
 
 use crate::tl_mbox::cmd::CmdPacket;
-use as_slice::AsSlice;
 use unsafe_linked_list::LinkedListNode;
 
 /**
@@ -155,7 +152,7 @@ static mut LOCAL_FREE_BUF_QUEUE: MaybeUninit<LinkedListNode> = MaybeUninit::unin
 #[link_section = "MB_MEM1"]
 static mut TRACES_EVT_QUEUE: MaybeUninit<LinkedListNode> = MaybeUninit::uninit();
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 #[repr(C, packed)]
 struct PacketHeader {
     next: *const u32,

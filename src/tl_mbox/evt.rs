@@ -39,7 +39,7 @@ pub struct Evt {
 #[derive(Debug, Default)]
 #[repr(C, packed)]
 pub struct EvtSerial {
-    ty: u8,
+    kind: u8,
     evt: Evt,
 }
 
@@ -56,4 +56,14 @@ pub struct EvtSerial {
 pub struct EvtPacket {
     header: PacketHeader,
     evt_serial: EvtSerial,
+}
+
+impl EvtPacket {
+    pub fn kind(&self) -> u8 {
+        self.evt_serial.kind
+    }
+
+    pub fn evt(&self) -> &Evt {
+        &self.evt_serial.evt
+    }
 }

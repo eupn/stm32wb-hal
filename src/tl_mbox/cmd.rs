@@ -13,7 +13,7 @@ impl core::fmt::Debug for Cmd {
         write!(
             f,
             "Cmd ({}, {}, [{}...])",
-            self.cmdcode, self.plen, self.payload[0]
+            self.cmdcode.clone(), self.plen, self.payload[0]
         )
     }
 }
