@@ -23,8 +23,6 @@ unsafe impl Sync for Config {}
 
 impl Sys {
     pub fn new(ipcc: &mut Ipcc, config: Config, system_cmd_buffer: *const CmdPacket) -> Self {
-        cortex_m_semihosting::hprintln!("CMD buffer: {:?}", system_cmd_buffer);
-
         ipcc.c1_set_rx_channel(channels::cpu2::IPCC_SYSTEM_EVENT_CHANNEL, true);
 
         unsafe {
