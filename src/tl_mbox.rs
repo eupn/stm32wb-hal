@@ -285,19 +285,31 @@ impl TlMbox {
         TlMbox { sys }
     }
 
-    pub fn interrupt_ipcc_tx_handler(&self, ipcc: &mut crate::ipcc::Ipcc) {
-        if ipcc.is_tx_pending(channels::cpu1::IPCC_SYSTEM_CMD_RSP_CHANNEL) {
-            self.sys.cmd_evt_handler(ipcc);
-        } else {
-            todo!()
+    pub fn interrupt_ipcc_rx_handler(&mut self, ipcc: &mut crate::ipcc::Ipcc) {
+        if ipcc.is_rx_pending(channels::cpu2::IPCC_SYSTEM_EVENT_CHANNEL) {
+            cortex_m_semihosting::hprintln!("IRQ IPCC_SYSTEM_EVENT_CHANNEL");
+            self.sys.evt_handler(ipcc);
+        } else if ipcc.is_rx_pending(channels::cpu2::IPCC_THREAD_NOTIFICATION_ACK_CHANNEL) {
+            cortex_m_semihosting::hprintln!("IRQ IPCC_THREAD_NOTIFICATION_ACK_CHANNEL");
+        } else if ipcc.is_rx_pending(channels::cpu2::IPCC_BLE_EVENT_CHANNEL) {
+            cortex_m_semihosting::hprintln!("IRQ IPCC_BLE_EVENT_CHANNEL");
+        } else if ipcc.is_rx_pending(channels::cpu2::IPCC_TRACES_CHANNEL) {
+            cortex_m_semihosting::hprintln!("IRQ IPCC_TRACES_CHANNEL");
+        } else if ipcc.is_rx_pending(channels::cpu2::IPCC_THREAD_CLI_NOTIFICATION_ACK_CHANNEL) {
+            cortex_m_semihosting::hprintln!("IRQ THREAD_CLI_NOTIFICATION_ACK_CHANNEL");
         }
     }
 
-    pub fn interrupt_ipcc_rx_handler(&self, ipcc: &mut crate::ipcc::Ipcc) {
-        if ipcc.is_rx_pending(channels::cpu2::IPCC_SYSTEM_EVENT_CHANNEL) {
-            self.sys.evt_handler(ipcc);
-        } else {
-            todo!()
+    pub fn interrupt_ipcc_tx_handler(&mut self, ipcc: &mut crate::ipcc::Ipcc) {
+        if ipcc.is_tx_pending(channels::cpu1::IPCC_SYSTEM_CMD_RSP_CHANNEL) {
+            cortex_m_semihosting::hprintln!("IRQ IPCC_SYSTEM_CMD_RSP_CHANNEL");
+            self.sys.cmd_evt_handler(ipcc);
+        } else if ipcc.is_tx_pending(channels::cpu1::IPCC_THREAD_OT_CMD_RSP_CHANNEL) {
+            cortex_m_semihosting::hprintln!("IQR IPCC_THREAD_OT_CMD_RSP_CHANNEL");
+        } else if ipcc.is_tx_pending(channels::cpu1::IPCC_MM_RELEASE_BUFFER_CHANNEL) {
+            cortex_m_semihosting::hprintln!("IRQ IPCC_MM_RELEASE_BUFFER_CHANNEL");
+        } else if ipcc.is_tx_pending(channels::cpu1::IPCC_HCI_ACL_DATA_CHANNEL) {
+            cortex_m_semihosting::hprintln!("IRQ IPCC_HCI_ACL_DATA_CHANNEL");
         }
     }
 }
