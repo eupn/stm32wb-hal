@@ -19,11 +19,11 @@ pub mod delay;
 
 pub mod flash;
 pub mod gpio;
-pub mod ipcc;
 pub mod i2c;
-pub mod tl_mbox;
+pub mod ipcc;
 pub mod prelude;
 pub mod pwr;
 pub mod rcc;
 pub mod time;
+pub mod tl_mbox;
 pub mod usb;
