@@ -6,17 +6,27 @@
 extern crate panic_semihosting;
 extern crate stm32wb_hal as hal;
 
+use cortex_m_rt::exception;
+
 use rtfm::app;
 
 use hal::flash::FlashExt;
 use hal::prelude::*;
-use hal::rcc::{ApbDivider, Config, HDivider, HseDivider, PllConfig, PllSrc, SysClkSrc, UsbClkSrc};
+use hal::rcc::{
+    ApbDivider, Config, HDivider, HseDivider, PllConfig, PllSrc, Rcc, SysClkSrc, UsbClkSrc,
+};
 use hal::usb::{Peripheral, UsbBus, UsbBusType};
-use hal::tl_mbox;
 
-use usb_device::prelude::*;
+use core::mem::MaybeUninit;
+use hal::ipcc::Ipcc;
+use hal::tl_mbox::cmd::CmdPacket;
+use hal::tl_mbox::{
+    sys::{Config as SysConfig, Sys},
+    TlMbox, TlMboxConfig,
+};
 use usb_device::bus;
 use usb_device::device::UsbDevice;
+use usb_device::prelude::*;
 use usbd_serial::{SerialPort, USB_CLASS_CDC};
 
 #[app(device = stm32wb_hal::pac, peripherals = true)]
@@ -24,6 +34,9 @@ const APP: () = {
     struct Resources {
         usb_dev: UsbDevice<'static, UsbBusType>,
         serial: SerialPort<'static, UsbBusType>,
+
+        mbox: TlMbox,
+        ipcc: Ipcc,
     }
 
     #[init]
@@ -54,10 +67,22 @@ const APP: () = {
 
         let mut rcc = rcc.apply_clock_config(clock_config, &mut dp.FLASH.constrain().acr);
 
-        tl_mbox::tl_init(&mut rcc, &mut dp.IPCC.constrain());
+        let mut ipcc = dp.IPCC.constrain();
+        let mbox = init_mbox(&mut rcc, &mut ipcc);
+
+        // Boot CPU2
+        hal::pwr::set_cpu2(true);
+
+        cortex_m_semihosting::hprintln!("IPCC C1MR:     {:32b}", ipcc.rb.c1mr.read().bits());
+        cortex_m_semihosting::hprintln!("IPCC C2MR:     {:32b}", ipcc.rb.c2mr.read().bits());
+        cortex_m_semihosting::hprintln!("IPCC C2CR:     {:32b}", ipcc.rb.c2cr.read().bits());
+
+        cortex_m_semihosting::hprintln!("WirelessFwInfoTable: {:#?}", unsafe {
+            (*(*hal::tl_mbox::TL_REF_TABLE.as_ptr()).device_info_table).wireless_fw_info_table
+        });
 
         // Enable USB power supply
-        hal::pwr::set_usb(true);
+        //hal::pwr::set_usb(true);
 
         let mut gpioa = dp.GPIOA.split(&mut rcc);
 
@@ -78,7 +103,12 @@ const APP: () = {
             .device_class(USB_CLASS_CDC)
             .build();
 
-        init::LateResources { usb_dev, serial }
+        init::LateResources {
+            usb_dev,
+            serial,
+            mbox,
+            ipcc,
+        }
     }
 
     #[task(binds = USB_HP, resources = [usb_dev, serial])]
@@ -91,14 +121,18 @@ const APP: () = {
         usb_poll(&mut cx.resources.usb_dev, &mut cx.resources.serial);
     }
 
-    #[task(binds = IPCC_C1_RX_IT, resources = [])]
-    fn mbox_rx(cx: mbox_rx::Context) {
-        cortex_m::asm::bkpt();
+    #[task(binds = IPCC_C1_RX_IT, resources = [mbox, ipcc])]
+    fn mbox_rx(mut cx: mbox_rx::Context) {
+        cx.resources
+            .mbox
+            .interrupt_ipcc_rx_handler(&mut cx.resources.ipcc);
     }
 
-    #[task(binds = IPCC_C1_TX_IT, resources = [])]
-    fn mbox_tx(cx: mbox_tx::Context) {
-        cortex_m::asm::bkpt();
+    #[task(binds = IPCC_C1_TX_IT, resources = [mbox, ipcc])]
+    fn mbox_tx(mut cx: mbox_tx::Context) {
+        cx.resources
+            .mbox
+            .interrupt_ipcc_tx_handler(&mut cx.resources.ipcc);
     }
 };
 
@@ -125,4 +159,29 @@ fn usb_poll<B: bus::UsbBus>(
         }
         _ => {}
     }
+}
+
+#[inline(never)]
+fn init_mbox(rcc: &mut Rcc, ipcc: &mut Ipcc) -> TlMbox {
+    let sys_config = SysConfig {
+        sys_evt_cb,
+        cmd_evt_cb,
+    };
+
+    let config = TlMboxConfig { sys_config };
+
+    TlMbox::tl_init(rcc, ipcc, config)
+}
+
+fn sys_evt_cb() {
+    cortex_m::asm::bkpt();
+}
+
+fn cmd_evt_cb() {
+    cortex_m::asm::bkpt();
+}
+
+#[exception]
+fn DefaultHandler(irqn: i16) -> ! {
+    panic!("Unhandled IRQ: {}", irqn);
 }
