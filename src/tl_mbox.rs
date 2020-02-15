@@ -4,6 +4,7 @@ use core::mem::MaybeUninit;
 
 mod channels;
 pub mod cmd;
+pub mod evt;
 pub mod sys;
 mod unsafe_linked_list;
 
@@ -161,17 +162,18 @@ struct PacketHeader {
     prev: *const u32,
 }
 
-#[derive(Debug, Copy, Clone)]
-#[repr(C, packed)]
-struct CsEvent {
-    status: u8,
-    numcmd: u8,
-    cmdcode: u16,
+impl Default for PacketHeader {
+    fn default() -> Self {
+        Self {
+            next: core::ptr::null(),
+            prev: core::ptr::null(),
+        }
+    }
 }
 
 const TL_PACKET_HEADER_SIZE: usize = core::mem::size_of::<PacketHeader>();
 const TL_EVT_HEADER_SIZE: usize = 3;
-const TL_CS_EVT_SIZE: usize = core::mem::size_of::<CsEvent>();
+const TL_CS_EVT_SIZE: usize = core::mem::size_of::<evt::CsEvt>();
 
 #[link_section = "MB_MEM2"]
 static mut CS_BUFFER: MaybeUninit<
