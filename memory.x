@@ -33,7 +33,7 @@ SECTIONS {
 }
 */
 SECTIONS {
-    S_TL_REF_TABLE    (NOLOAD) : { *(TL_REF_TABLE) } >RAM_SHARED
+    TL_REF_TABLE      (NOLOAD) : { *(TL_REF_TABLE) } >RAM_SHARED
     MB_MEM1           (NOLOAD) : { *(MB_MEM1) } >RAM_SHARED
     MB_MEM2           (NOLOAD) : { *(MB_MEM2) } >RAM_SHARED
 }
