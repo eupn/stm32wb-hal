@@ -82,7 +82,7 @@ const APP: () = {
         });
 
         // Enable USB power supply
-        //hal::pwr::set_usb(true);
+        hal::pwr::set_usb(true);
 
         let mut gpioa = dp.GPIOA.split(&mut rcc);
 
