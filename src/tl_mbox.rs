@@ -14,6 +14,20 @@ use crate::tl_mbox::cmd::CmdPacket;
 use unsafe_linked_list::LinkedListNode;
 use crate::tl_mbox::evt::EvtBox;
 
+#[derive(Debug, Copy, Clone)]
+#[repr(C, packed)]
+pub struct SafeBootInfoTable {
+    version: u32,
+}
+
+#[derive(Debug, Copy, Clone)]
+#[repr(C, packed)]
+pub struct RssInfoTable {
+    version: u32,
+    memory_size: u32,
+    rss_info: u32,
+}
+
 /**
  * Version
  * [0:3]   = Build - 0: Untracked - 15:Released - x: Tracked version
@@ -30,20 +44,6 @@ use crate::tl_mbox::evt::EvtBox;
  */
 #[derive(Debug, Copy, Clone)]
 #[repr(C, packed)]
-pub struct SafeBootInfoTable {
-    version: u32,
-}
-
-#[derive(Debug, Copy, Clone)]
-#[repr(C, packed)]
-pub struct RssInfoTable {
-    version: u32,
-    memory_size: u32,
-    rss_info: u32,
-}
-
-#[derive(Debug, Copy, Clone)]
-#[repr(C, packed)]
 pub struct WirelessFwInfoTable {
     version: u32,
     memory_size: u32,
@@ -51,7 +51,36 @@ pub struct WirelessFwInfoTable {
     ble_info: u32,
 }
 
-#[derive(Debug)]
+impl WirelessFwInfoTable {
+    pub fn version_major(&self) -> u8 {
+        (self.version.get_bits(24..31) & 0xff) as u8
+    }
+
+    pub fn version_minor(&self) -> u8 {
+        (self.version.get_bits(16..23) & 0xff) as u8
+    }
+
+    pub fn subversion(&self) -> u8 {
+        (self.version.get_bits(8..15) & 0xff) as u8
+    }
+
+    /// Size of FLASH, expressed in number of 4K sectors.
+    pub fn flash_size(&self) -> u8 {
+        (self.memory_size.get_bits(0..7) & 0xff) as u8
+    }
+
+    /// Size of SRAM2a, expressed in number of 1K sectors.
+    pub fn sram2a_size(&self) -> u8 {
+        (self.memory_size.get_bits(24..31) & 0xff) as u8
+    }
+
+    /// Size of SRAM2b, expressed in number of 1K sectors.
+    pub fn sram2b_size(&self) -> u8 {
+        (self.memory_size.get_bits(16..23) & 0xff) as u8
+    }
+}
+
+#[derive(Debug, Clone)]
 #[repr(C, align(4))]
 pub struct DeviceInfoTable {
     pub safe_boot_info_table: SafeBootInfoTable,
