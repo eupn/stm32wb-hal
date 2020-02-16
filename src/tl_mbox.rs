@@ -1,5 +1,8 @@
 use core::mem::MaybeUninit;
 
+use bit_field::BitField;
+use heapless::spsc;
+
 mod channels;
 pub mod mm;
 pub mod cmd;
@@ -9,8 +12,7 @@ mod unsafe_linked_list;
 
 use crate::tl_mbox::cmd::CmdPacket;
 use unsafe_linked_list::LinkedListNode;
-use crate::tl_mbox::evt::{EvtBox, EvtPacket};
-use crate::tl_mbox::unsafe_linked_list::LST_init_head;
+use crate::tl_mbox::evt::EvtBox;
 
 /**
  * Version
@@ -224,17 +226,18 @@ static mut SYS_SPARE_EVT_BUF: MaybeUninit<[u8; TL_PACKET_HEADER_SIZE + TL_EVT_HE
 static mut BLE_SPARE_EVT_BUF: MaybeUninit<[u8; TL_PACKET_HEADER_SIZE + TL_EVT_HEADER_SIZE + 255]> =
     MaybeUninit::uninit();
 
-pub type EventCallback = fn(EvtBox);
+pub type HeaplessEvtQueue = spsc::Queue<EvtBox, heapless::consts::U32, u8, spsc::SingleCore>;
 
 pub struct TlMbox {
     sys: sys::Sys,
     mm: mm::MemoryManager,
     config: TlMboxConfig,
+
+    /// Current event that is produced during IPCC IRQ handler execution
+    evt_queue: HeaplessEvtQueue,
 }
 
-pub struct TlMboxConfig {
-    pub evt_cb: EventCallback,
-}
+pub struct TlMboxConfig {}
 
 impl TlMbox {
     /// Initializes low-level transport between CPU1 and BLE stack on CPU2.
@@ -277,22 +280,24 @@ impl TlMbox {
             cortex_m_semihosting::hprintln!("TL_REF_TABLE: {:?}", TL_REF_TABLE.as_ptr()).unwrap();
         }
 
-        TlMbox { sys, mm, config }
+        let evt_queue = unsafe { heapless::spsc::Queue::u8_sc() };
+
+        TlMbox { sys, mm, config, evt_queue, }
     }
 
     pub fn interrupt_ipcc_rx_handler(&mut self, ipcc: &mut crate::ipcc::Ipcc) {
         if ipcc.is_rx_pending(channels::cpu2::IPCC_SYSTEM_EVENT_CHANNEL) {
             cortex_m_semihosting::hprintln!("IRQ IPCC_SYSTEM_EVENT_CHANNEL").unwrap();
-            self.sys.evt_handler(ipcc, self.config.evt_cb);
+            self.sys.evt_handler(ipcc, &mut self.evt_queue);
         } else if ipcc.is_rx_pending(channels::cpu2::IPCC_THREAD_NOTIFICATION_ACK_CHANNEL) {
-            cortex_m_semihosting::hprintln!("IRQ IPCC_THREAD_NOTIFICATION_ACK_CHANNEL");
+            cortex_m_semihosting::hprintln!("IRQ IPCC_THREAD_NOTIFICATION_ACK_CHANNEL").unwrap();
         } else if ipcc.is_rx_pending(channels::cpu2::IPCC_BLE_EVENT_CHANNEL) {
-            cortex_m_semihosting::hprintln!("IRQ IPCC_BLE_EVENT_CHANNEL");
+            cortex_m_semihosting::hprintln!("IRQ IPCC_BLE_EVENT_CHANNEL").unwrap();
             //ble::evt_handler(ipcc, self.config.evt_cb);
         } else if ipcc.is_rx_pending(channels::cpu2::IPCC_TRACES_CHANNEL) {
-            cortex_m_semihosting::hprintln!("IRQ IPCC_TRACES_CHANNEL");
+            cortex_m_semihosting::hprintln!("IRQ IPCC_TRACES_CHANNEL").unwrap();
         } else if ipcc.is_rx_pending(channels::cpu2::IPCC_THREAD_CLI_NOTIFICATION_ACK_CHANNEL) {
-            cortex_m_semihosting::hprintln!("IRQ THREAD_CLI_NOTIFICATION_ACK_CHANNEL");
+            cortex_m_semihosting::hprintln!("IRQ THREAD_CLI_NOTIFICATION_ACK_CHANNEL").unwrap();
         }
     }
 
@@ -300,15 +305,36 @@ impl TlMbox {
         cortex_m_semihosting::hprintln!("IRQ interrupt_ipcc_tx_handler").unwrap();
 
         if ipcc.is_tx_pending(channels::cpu1::IPCC_SYSTEM_CMD_RSP_CHANNEL) {
-            cortex_m_semihosting::hprintln!("IRQ IPCC_SYSTEM_CMD_RSP_CHANNEL");
+            cortex_m_semihosting::hprintln!("IRQ IPCC_SYSTEM_CMD_RSP_CHANNEL").unwrap();
             self.sys.cmd_evt_handler(ipcc);
         } else if ipcc.is_tx_pending(channels::cpu1::IPCC_THREAD_OT_CMD_RSP_CHANNEL) {
-            cortex_m_semihosting::hprintln!("IQR IPCC_THREAD_OT_CMD_RSP_CHANNEL");
+            cortex_m_semihosting::hprintln!("IQR IPCC_THREAD_OT_CMD_RSP_CHANNEL").unwrap();
         } else if ipcc.is_tx_pending(channels::cpu1::IPCC_MM_RELEASE_BUFFER_CHANNEL) {
-            cortex_m_semihosting::hprintln!("IRQ IPCC_MM_RELEASE_BUFFER_CHANNEL");
+            cortex_m_semihosting::hprintln!("IRQ IPCC_MM_RELEASE_BUFFER_CHANNEL").unwrap();
             mm::free_buf_handler(ipcc);
         } else if ipcc.is_tx_pending(channels::cpu1::IPCC_HCI_ACL_DATA_CHANNEL) {
-            cortex_m_semihosting::hprintln!("IRQ IPCC_HCI_ACL_DATA_CHANNEL");
+            cortex_m_semihosting::hprintln!("IRQ IPCC_HCI_ACL_DATA_CHANNEL").unwrap();
         }
+    }
+
+    /// Returns CPU2 wireless firmware information (if present).
+    pub fn wireless_fw_info(&self) -> Option<WirelessFwInfoTable> {
+        unsafe {
+            let info = &(*(*TL_REF_TABLE.as_ptr()).device_info_table).wireless_fw_info_table;
+
+            // Zero version indicates that CPU2 wasn't active and didn't fill the information table
+            if info.version != 0 {
+                Some(info.clone())
+            } else {
+                None
+            }
+        }
+    }
+
+    /// Picks one single `EvtBox` from internal event queue.
+    ///
+    /// Internal event queue is populated in IPCC RX IRQ handler.
+    pub fn dequeue_event(&mut self) -> Option<EvtBox> {
+        self.evt_queue.dequeue()
     }
 }

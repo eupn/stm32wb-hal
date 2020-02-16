@@ -17,17 +17,13 @@ use hal::rcc::{
 };
 use hal::usb::{Peripheral, UsbBus, UsbBusType};
 
-use core::mem::MaybeUninit;
 use hal::ipcc::Ipcc;
-use hal::tl_mbox::cmd::CmdPacket;
-use hal::tl_mbox::{
-    sys::Sys,
-    TlMbox, TlMboxConfig,
-};
+use hal::tl_mbox::{TlMbox, TlMboxConfig, WirelessFwInfoTable};
 use usb_device::bus;
 use usb_device::device::UsbDevice;
 use usb_device::prelude::*;
 use usbd_serial::{SerialPort, USB_CLASS_CDC};
+use hal::tl_mbox::evt::EvtBox;
 
 #[app(device = stm32wb_hal::pac, peripherals = true)]
 const APP: () = {
@@ -113,11 +109,15 @@ const APP: () = {
         usb_poll(&mut cx.resources.usb_dev, &mut cx.resources.serial);
     }
 
-    #[task(binds = IPCC_C1_RX_IT, resources = [mbox, ipcc])]
+    #[task(binds = IPCC_C1_RX_IT, resources = [mbox, ipcc], spawn = [evt])]
     fn mbox_rx(mut cx: mbox_rx::Context) {
         cx.resources
             .mbox
             .interrupt_ipcc_rx_handler(&mut cx.resources.ipcc);
+
+        while let Some(evt) = cx.resources.mbox.dequeue_event() {
+            cx.spawn.evt(evt).unwrap();
+        }
     }
 
     #[task(binds = IPCC_C1_TX_IT, resources = [mbox, ipcc])]
@@ -125,6 +125,29 @@ const APP: () = {
         cx.resources
             .mbox
             .interrupt_ipcc_tx_handler(&mut cx.resources.ipcc);
+    }
+
+    #[task(resources = [mbox])]
+    fn evt(cx: evt::Context, evt: EvtBox) {
+        let event = evt.evt();
+        cortex_m_semihosting::hprintln!("Got event #{}", event.kind()).unwrap();
+
+        if event.kind() == 18 {
+            if let Some(fw_info) = cx.resources.mbox.wireless_fw_info() {
+                let fw_info: WirelessFwInfoTable = fw_info;
+
+                cortex_m_semihosting::hprintln!("-- CPU2 wireless firmware info --").unwrap();
+                cortex_m_semihosting::hprintln!("FW version: {}.{}.{}", fw_info.version_major(), fw_info.version_minor(), fw_info.subversion()).unwrap();
+                cortex_m_semihosting::hprintln!("FLASH size: {} KB", fw_info.flash_size() as u32 * 4096 / 1024).unwrap();
+                cortex_m_semihosting::hprintln!("SRAM2a size {} KB", fw_info.sram2a_size() as u32 * 1024).unwrap();
+                cortex_m_semihosting::hprintln!("SRAM2b size {} KB", fw_info.sram2b_size() as u32 * 1024).unwrap();
+            }
+        }
+    }
+
+    // Interrupt handlers used to dispatch software tasks
+    extern "C" {
+        fn USART1();
     }
 };
 
@@ -155,14 +178,9 @@ fn usb_poll<B: bus::UsbBus>(
 
 #[inline(never)]
 fn init_mbox(rcc: &mut Rcc, ipcc: &mut Ipcc) -> TlMbox {
-    let config = TlMboxConfig { evt_cb };
+    let config = TlMboxConfig {};
 
     TlMbox::tl_init(rcc, ipcc, config)
-}
-
-fn evt_cb(evt: hal::tl_mbox::evt::EvtBox) {
-    let event = evt.evt();
-    cortex_m_semihosting::hprintln!("Got event #{}", event.kind()).unwrap();
 }
 
 #[exception]
