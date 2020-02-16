@@ -73,16 +73,14 @@ impl EvtPacket {
 /// on `Drop`.
 #[derive(Debug)]
 pub struct EvtBox {
-    ptr: *const EvtPacket
+    ptr: *const EvtPacket,
 }
 
 unsafe impl Send for EvtBox {}
 
 impl EvtBox {
-    pub fn new(ptr: *const EvtPacket) -> Self {
-        Self {
-            ptr
-        }
+    pub(super) fn new(ptr: *const EvtPacket) -> Self {
+        Self { ptr }
     }
 
     /// Copies event data from inner pointer and returns an event structure.
@@ -97,9 +95,11 @@ impl EvtBox {
 
 impl Drop for EvtBox {
     fn drop(&mut self) {
-        use crate::ipcc::{Ipcc, IpccExt};
+        use crate::ipcc::IpccExt;
 
-        let mut ipcc = unsafe { stm32wb_pac::Peripherals::steal() }.IPCC.constrain();
+        let mut ipcc = unsafe { stm32wb_pac::Peripherals::steal() }
+            .IPCC
+            .constrain();
         super::mm::evt_drop(self.ptr, &mut ipcc);
     }
 }

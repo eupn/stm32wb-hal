@@ -3,9 +3,11 @@
 use super::channels;
 use crate::ipcc::Ipcc;
 use crate::tl_mbox::cmd::CmdPacket;
-use crate::tl_mbox::{SysTable, SYSTEM_EVT_QUEUE, evt, HeaplessEvtQueue};
-use crate::tl_mbox::unsafe_linked_list::{LinkedListNode, LST_is_empty, LST_init_head, LST_remove_head};
 use crate::tl_mbox::evt::EvtBox;
+use crate::tl_mbox::unsafe_linked_list::{
+    LST_init_head, LST_is_empty, LST_remove_head, LinkedListNode,
+};
+use crate::tl_mbox::{evt, HeaplessEvtQueue, SysTable, SYSTEM_EVT_QUEUE};
 
 pub type SysCallback = fn();
 
@@ -46,7 +48,8 @@ impl Sys {
             while !LST_is_empty(SYSTEM_EVT_QUEUE.as_mut_ptr()) {
                 LST_remove_head(SYSTEM_EVT_QUEUE.as_mut_ptr(), node_ptr_ptr);
 
-                let event = core::mem::transmute::<*mut LinkedListNode, *const evt::EvtPacket>(node_ptr);
+                let event =
+                    core::mem::transmute::<*mut LinkedListNode, *const evt::EvtPacket>(node_ptr);
                 let event = EvtBox::new(event);
 
                 queue.enqueue(event).unwrap();

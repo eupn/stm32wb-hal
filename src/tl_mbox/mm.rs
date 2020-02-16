@@ -2,12 +2,17 @@
 
 use core::mem::MaybeUninit;
 
-use super::unsafe_linked_list::{LinkedListNode, LST_init_head, LST_insert_tail, LST_remove_head, LST_is_empty};
-use super::{FREE_BUF_QUEUE, LOCAL_FREE_BUF_QUEUE, TL_MEM_MANAGER_TABLE, MemManagerTable, BLE_SPARE_EVT_BUF, SYS_SPARE_EVT_BUF, EVT_POOL, POOL_SIZE};
 use super::channels::cpu1::IPCC_MM_RELEASE_BUFFER_CHANNEL;
+use super::unsafe_linked_list::{
+    LST_init_head, LST_insert_tail, LST_is_empty, LST_remove_head, LinkedListNode,
+};
+use super::{
+    MemManagerTable, BLE_SPARE_EVT_BUF, EVT_POOL, FREE_BUF_QUEUE, LOCAL_FREE_BUF_QUEUE, POOL_SIZE,
+    SYS_SPARE_EVT_BUF, TL_MEM_MANAGER_TABLE,
+};
 
-use crate::tl_mbox::evt::{EvtPacket, Evt};
 use crate::ipcc::Ipcc;
+use crate::tl_mbox::evt::EvtPacket;
 use crate::tl_mbox::TL_REF_TABLE;
 
 pub(super) struct MemoryManager {}
@@ -64,7 +69,10 @@ pub fn send_free_buf() {
 
         while !LST_is_empty(LOCAL_FREE_BUF_QUEUE.as_mut_ptr()) {
             LST_remove_head(LOCAL_FREE_BUF_QUEUE.as_mut_ptr(), node_ptr_ptr);
-            LST_insert_tail((&*(*TL_REF_TABLE.as_ptr()).mem_manager_table).pevt_free_buffer_queue, node_ptr);
+            LST_insert_tail(
+                (&*(*TL_REF_TABLE.as_ptr()).mem_manager_table).pevt_free_buffer_queue,
+                node_ptr,
+            );
         }
     }
 }

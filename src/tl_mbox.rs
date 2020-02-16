@@ -4,15 +4,15 @@ use bit_field::BitField;
 use heapless::spsc;
 
 mod channels;
-pub mod mm;
 pub mod cmd;
 pub mod evt;
+pub mod mm;
 pub mod sys;
 mod unsafe_linked_list;
 
 use crate::tl_mbox::cmd::CmdPacket;
-use unsafe_linked_list::LinkedListNode;
 use crate::tl_mbox::evt::EvtBox;
+use unsafe_linked_list::LinkedListNode;
 
 #[derive(Debug, Copy, Clone)]
 #[repr(C, packed)]
@@ -311,7 +311,12 @@ impl TlMbox {
 
         let evt_queue = unsafe { heapless::spsc::Queue::u8_sc() };
 
-        TlMbox { sys, mm, config, evt_queue, }
+        TlMbox {
+            sys,
+            mm,
+            config,
+            evt_queue,
+        }
     }
 
     pub fn interrupt_ipcc_rx_handler(&mut self, ipcc: &mut crate::ipcc::Ipcc) {
@@ -322,7 +327,7 @@ impl TlMbox {
             cortex_m_semihosting::hprintln!("IRQ IPCC_THREAD_NOTIFICATION_ACK_CHANNEL").unwrap();
         } else if ipcc.is_rx_pending(channels::cpu2::IPCC_BLE_EVENT_CHANNEL) {
             cortex_m_semihosting::hprintln!("IRQ IPCC_BLE_EVENT_CHANNEL").unwrap();
-            //ble::evt_handler(ipcc, self.config.evt_cb);
+        //ble::evt_handler(ipcc, self.config.evt_cb);
         } else if ipcc.is_rx_pending(channels::cpu2::IPCC_TRACES_CHANNEL) {
             cortex_m_semihosting::hprintln!("IRQ IPCC_TRACES_CHANNEL").unwrap();
         } else if ipcc.is_rx_pending(channels::cpu2::IPCC_THREAD_CLI_NOTIFICATION_ACK_CHANNEL) {

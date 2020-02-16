@@ -11,8 +11,6 @@ use crate::stm32::RCC;
 use crate::flash::ACR;
 use crate::time::{Hertz, U32Ext};
 
-use cortex_m_semihosting::hprintln;
-
 /// HSI frequency.
 pub const HSI_FREQ: u32 = 16_000_000;
 

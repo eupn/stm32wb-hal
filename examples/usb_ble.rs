@@ -18,12 +18,12 @@ use hal::rcc::{
 use hal::usb::{Peripheral, UsbBus, UsbBusType};
 
 use hal::ipcc::Ipcc;
+use hal::tl_mbox::evt::EvtBox;
 use hal::tl_mbox::{TlMbox, TlMboxConfig, WirelessFwInfoTable};
 use usb_device::bus;
 use usb_device::device::UsbDevice;
 use usb_device::prelude::*;
 use usbd_serial::{SerialPort, USB_CLASS_CDC};
-use hal::tl_mbox::evt::EvtBox;
 
 #[app(device = stm32wb_hal::pac, peripherals = true)]
 const APP: () = {
@@ -137,10 +137,28 @@ const APP: () = {
                 let fw_info: WirelessFwInfoTable = fw_info;
 
                 cortex_m_semihosting::hprintln!("-- CPU2 wireless firmware info --").unwrap();
-                cortex_m_semihosting::hprintln!("FW version: {}.{}.{}", fw_info.version_major(), fw_info.version_minor(), fw_info.subversion()).unwrap();
-                cortex_m_semihosting::hprintln!("FLASH size: {} KB", fw_info.flash_size() as u32 * 4096 / 1024).unwrap();
-                cortex_m_semihosting::hprintln!("SRAM2a size {} KB", fw_info.sram2a_size() as u32 * 1024).unwrap();
-                cortex_m_semihosting::hprintln!("SRAM2b size {} KB", fw_info.sram2b_size() as u32 * 1024).unwrap();
+                cortex_m_semihosting::hprintln!(
+                    "FW version: {}.{}.{}",
+                    fw_info.version_major(),
+                    fw_info.version_minor(),
+                    fw_info.subversion()
+                )
+                .unwrap();
+                cortex_m_semihosting::hprintln!(
+                    "FLASH size: {} KB",
+                    fw_info.flash_size() as u32 * 4096 / 1024
+                )
+                .unwrap();
+                cortex_m_semihosting::hprintln!(
+                    "SRAM2a size {} KB",
+                    fw_info.sram2a_size() as u32 * 1024
+                )
+                .unwrap();
+                cortex_m_semihosting::hprintln!(
+                    "SRAM2b size {} KB",
+                    fw_info.sram2b_size() as u32 * 1024
+                )
+                .unwrap();
             }
         }
     }
