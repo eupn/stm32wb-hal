@@ -76,6 +76,8 @@ pub struct EvtBox {
     ptr: *const EvtPacket
 }
 
+unsafe impl Send for EvtBox {}
+
 impl EvtBox {
     pub fn new(ptr: *const EvtPacket) -> Self {
         Self {
