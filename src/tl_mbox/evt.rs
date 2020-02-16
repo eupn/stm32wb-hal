@@ -1,4 +1,5 @@
 use crate::tl_mbox::PacketHeader;
+use core::mem::MaybeUninit;
 
 /**
  * The payload of `Evt` for a command status event
@@ -65,5 +66,38 @@ impl EvtPacket {
 
     pub fn evt(&self) -> &Evt {
         &self.evt_serial.evt
+    }
+}
+
+/// Smart pointer to the `EvtPacket` that will dispose underlying EvtPacket buffer automatically
+/// on `Drop`.
+#[derive(Debug)]
+pub struct EvtBox {
+    ptr: *const EvtPacket
+}
+
+impl EvtBox {
+    pub fn new(ptr: *const EvtPacket) -> Self {
+        Self {
+            ptr
+        }
+    }
+
+    /// Copies event data from inner pointer and returns an event structure.
+    pub fn evt(&self) -> EvtPacket {
+        let mut evt = MaybeUninit::uninit();
+        unsafe {
+            self.ptr.copy_to(evt.as_mut_ptr(), 1);
+            evt.assume_init()
+        }
+    }
+}
+
+impl Drop for EvtBox {
+    fn drop(&mut self) {
+        use crate::ipcc::{Ipcc, IpccExt};
+
+        let mut ipcc = unsafe { stm32wb_pac::Peripherals::steal() }.IPCC.constrain();
+        super::mm::evt_drop(self.ptr, &mut ipcc);
     }
 }

@@ -3,8 +3,9 @@
 use super::channels;
 use crate::ipcc::Ipcc;
 use crate::tl_mbox::cmd::CmdPacket;
-use crate::tl_mbox::{SysTable, SYSTEM_EVT_QUEUE, evt};
+use crate::tl_mbox::{SysTable, SYSTEM_EVT_QUEUE, evt, EventCallback};
 use crate::tl_mbox::unsafe_linked_list::{LinkedListNode, LST_is_empty, LST_init_head, LST_remove_head};
+use crate::tl_mbox::evt::EvtBox;
 
 pub type SysCallback = fn();
 
@@ -12,6 +13,7 @@ pub struct Sys {
     config: Config,
 }
 
+#[derive(Debug, Clone)]
 pub struct Config {
     pub cmd_evt_cb: SysCallback,
     pub sys_evt_cb: SysCallback,
@@ -47,7 +49,7 @@ impl Sys {
         // TODO: handle system cmd event
     }
 
-    pub fn evt_handler(&self, ipcc: &mut Ipcc) {
+    pub fn evt_handler(&self, ipcc: &mut Ipcc, cb: EventCallback) {
         unsafe {
             let mut node_ptr: *mut LinkedListNode = core::ptr::null_mut();
             let node_ptr_ptr: *mut *mut LinkedListNode = &mut node_ptr;
@@ -55,10 +57,8 @@ impl Sys {
             while !LST_is_empty(SYSTEM_EVT_QUEUE.as_mut_ptr()) {
                 LST_remove_head(SYSTEM_EVT_QUEUE.as_mut_ptr(), node_ptr_ptr);
 
-                let event = &*core::mem::transmute::<*mut LinkedListNode, *const evt::EvtPacket>(node_ptr);
-                cortex_m_semihosting::hprintln!("Got event #{}", event.kind());
-
-                // TODO: propagate events further
+                let event = core::mem::transmute::<*mut LinkedListNode, *const evt::EvtPacket>(node_ptr);
+                (cb)(EvtBox::new(event))
             }
         }
 

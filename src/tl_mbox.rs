@@ -9,6 +9,8 @@ mod unsafe_linked_list;
 
 use crate::tl_mbox::cmd::CmdPacket;
 use unsafe_linked_list::LinkedListNode;
+use crate::tl_mbox::evt::{EvtBox, EvtPacket};
+use crate::tl_mbox::unsafe_linked_list::LST_init_head;
 
 /**
  * Version
@@ -222,12 +224,17 @@ static mut SYS_SPARE_EVT_BUF: MaybeUninit<[u8; TL_PACKET_HEADER_SIZE + TL_EVT_HE
 static mut BLE_SPARE_EVT_BUF: MaybeUninit<[u8; TL_PACKET_HEADER_SIZE + TL_EVT_HEADER_SIZE + 255]> =
     MaybeUninit::uninit();
 
+pub type EventCallback = fn(EvtBox);
+
 pub struct TlMbox {
     sys: sys::Sys,
+    mm: mm::MemoryManager,
+    config: TlMboxConfig,
 }
 
 pub struct TlMboxConfig {
     pub sys_config: sys::Config,
+    pub evt_cb: EventCallback,
 }
 
 impl TlMbox {
@@ -264,21 +271,25 @@ impl TlMbox {
 
         ipcc.init(rcc);
 
-        let sys = sys::Sys::new(ipcc, config.sys_config, unsafe { SYS_CMD_BUF.as_ptr() });
+        let sys = sys::Sys::new(ipcc, config.sys_config.clone(), unsafe { SYS_CMD_BUF.as_ptr() });
+        let mm = mm::MemoryManager::new();
 
-        mm::init();
+        unsafe {
+            cortex_m_semihosting::hprintln!("TL_REF_TABLE: {:?}", TL_REF_TABLE.as_ptr()).unwrap();
+        }
 
-        TlMbox { sys, config }
+        TlMbox { sys, mm, config }
     }
 
     pub fn interrupt_ipcc_rx_handler(&mut self, ipcc: &mut crate::ipcc::Ipcc) {
         if ipcc.is_rx_pending(channels::cpu2::IPCC_SYSTEM_EVENT_CHANNEL) {
-            cortex_m_semihosting::hprintln!("IRQ IPCC_SYSTEM_EVENT_CHANNEL");
-            self.sys.evt_handler(ipcc);
+            cortex_m_semihosting::hprintln!("IRQ IPCC_SYSTEM_EVENT_CHANNEL").unwrap();
+            self.sys.evt_handler(ipcc, self.config.evt_cb);
         } else if ipcc.is_rx_pending(channels::cpu2::IPCC_THREAD_NOTIFICATION_ACK_CHANNEL) {
             cortex_m_semihosting::hprintln!("IRQ IPCC_THREAD_NOTIFICATION_ACK_CHANNEL");
         } else if ipcc.is_rx_pending(channels::cpu2::IPCC_BLE_EVENT_CHANNEL) {
             cortex_m_semihosting::hprintln!("IRQ IPCC_BLE_EVENT_CHANNEL");
+            //ble::evt_handler(ipcc, self.config.evt_cb);
         } else if ipcc.is_rx_pending(channels::cpu2::IPCC_TRACES_CHANNEL) {
             cortex_m_semihosting::hprintln!("IRQ IPCC_TRACES_CHANNEL");
         } else if ipcc.is_rx_pending(channels::cpu2::IPCC_THREAD_CLI_NOTIFICATION_ACK_CHANNEL) {
@@ -287,6 +298,8 @@ impl TlMbox {
     }
 
     pub fn interrupt_ipcc_tx_handler(&mut self, ipcc: &mut crate::ipcc::Ipcc) {
+        cortex_m_semihosting::hprintln!("IRQ interrupt_ipcc_tx_handler").unwrap();
+
         if ipcc.is_tx_pending(channels::cpu1::IPCC_SYSTEM_CMD_RSP_CHANNEL) {
             cortex_m_semihosting::hprintln!("IRQ IPCC_SYSTEM_CMD_RSP_CHANNEL");
             self.sys.cmd_evt_handler(ipcc);
@@ -294,6 +307,7 @@ impl TlMbox {
             cortex_m_semihosting::hprintln!("IQR IPCC_THREAD_OT_CMD_RSP_CHANNEL");
         } else if ipcc.is_tx_pending(channels::cpu1::IPCC_MM_RELEASE_BUFFER_CHANNEL) {
             cortex_m_semihosting::hprintln!("IRQ IPCC_MM_RELEASE_BUFFER_CHANNEL");
+            mm::free_buf_handler(ipcc);
         } else if ipcc.is_tx_pending(channels::cpu1::IPCC_HCI_ACL_DATA_CHANNEL) {
             cortex_m_semihosting::hprintln!("IRQ IPCC_HCI_ACL_DATA_CHANNEL");
         }

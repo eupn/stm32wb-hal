@@ -10,21 +10,27 @@ use crate::tl_mbox::evt::{EvtPacket, Evt};
 use crate::ipcc::Ipcc;
 use crate::tl_mbox::TL_REF_TABLE;
 
-pub fn init() {
-    // Configure MemManager
-    unsafe {
-        LST_init_head(FREE_BUF_QUEUE.as_mut_ptr());
-        LST_init_head(LOCAL_FREE_BUF_QUEUE.as_mut_ptr());
+pub(super) struct MemoryManager {}
 
-        TL_MEM_MANAGER_TABLE = MaybeUninit::new(MemManagerTable {
-            spare_ble_buffer: BLE_SPARE_EVT_BUF.as_ptr().cast(),
-            spare_sys_buffer: SYS_SPARE_EVT_BUF.as_ptr().cast(),
-            blepool: EVT_POOL.as_ptr().cast(),
-            blepoolsize: POOL_SIZE as u32,
-            pevt_free_buffer_queue: FREE_BUF_QUEUE.as_mut_ptr(),
-            traces_evt_pool: core::ptr::null(),
-            tracespoolsize: 0,
-        });
+impl MemoryManager {
+    pub fn new() -> Self {
+        // Configure MemManager
+        unsafe {
+            LST_init_head(FREE_BUF_QUEUE.as_mut_ptr());
+            LST_init_head(LOCAL_FREE_BUF_QUEUE.as_mut_ptr());
+
+            TL_MEM_MANAGER_TABLE = MaybeUninit::new(MemManagerTable {
+                spare_ble_buffer: BLE_SPARE_EVT_BUF.as_ptr().cast(),
+                spare_sys_buffer: SYS_SPARE_EVT_BUF.as_ptr().cast(),
+                blepool: EVT_POOL.as_ptr().cast(),
+                blepoolsize: POOL_SIZE as u32,
+                pevt_free_buffer_queue: FREE_BUF_QUEUE.as_mut_ptr(),
+                traces_evt_pool: core::ptr::null(),
+                tracespoolsize: 0,
+            });
+        }
+
+        MemoryManager {}
     }
 }
 

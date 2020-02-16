@@ -181,6 +181,11 @@ fn cmd_evt_cb() {
     cortex_m::asm::bkpt();
 }
 
+fn evt_cb(evt: hal::tl_mbox::evt::EvtBox) {
+    let event = evt.evt();
+    cortex_m_semihosting::hprintln!("Got event #{}", event.kind()).unwrap();
+}
+
 #[exception]
 fn DefaultHandler(irqn: i16) -> ! {
     panic!("Unhandled IRQ: {}", irqn);
