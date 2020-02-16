@@ -9,21 +9,10 @@ use crate::tl_mbox::evt::EvtBox;
 
 pub type SysCallback = fn();
 
-pub struct Sys {
-    config: Config,
-}
-
-#[derive(Debug, Clone)]
-pub struct Config {
-    pub cmd_evt_cb: SysCallback,
-    pub sys_evt_cb: SysCallback,
-}
-
-unsafe impl Send for Config {}
-unsafe impl Sync for Config {}
+pub struct Sys {}
 
 impl Sys {
-    pub fn new(ipcc: &mut Ipcc, config: Config, system_cmd_buffer: *const CmdPacket) -> Self {
+    pub fn new(ipcc: &mut Ipcc, system_cmd_buffer: *const CmdPacket) -> Self {
         ipcc.c1_set_rx_channel(channels::cpu2::IPCC_SYSTEM_EVENT_CHANNEL, true);
 
         unsafe {
@@ -35,7 +24,7 @@ impl Sys {
             };
         }
 
-        Sys { config }
+        Sys {}
     }
 
     pub fn send_cmd(&self, ipcc: &mut Ipcc) {

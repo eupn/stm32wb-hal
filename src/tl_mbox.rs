@@ -233,7 +233,6 @@ pub struct TlMbox {
 }
 
 pub struct TlMboxConfig {
-    pub sys_config: sys::Config,
     pub evt_cb: EventCallback,
 }
 
@@ -271,7 +270,7 @@ impl TlMbox {
 
         ipcc.init(rcc);
 
-        let sys = sys::Sys::new(ipcc, config.sys_config.clone(), unsafe { SYS_CMD_BUF.as_ptr() });
+        let sys = sys::Sys::new(ipcc, unsafe { SYS_CMD_BUF.as_ptr() });
         let mm = mm::MemoryManager::new();
 
         unsafe {

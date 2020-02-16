@@ -21,7 +21,7 @@ use core::mem::MaybeUninit;
 use hal::ipcc::Ipcc;
 use hal::tl_mbox::cmd::CmdPacket;
 use hal::tl_mbox::{
-    sys::{Config as SysConfig, Sys},
+    sys::Sys,
     TlMbox, TlMboxConfig,
 };
 use usb_device::bus;
@@ -72,14 +72,6 @@ const APP: () = {
 
         // Boot CPU2
         hal::pwr::set_cpu2(true);
-
-        cortex_m_semihosting::hprintln!("IPCC C1MR:     {:32b}", ipcc.rb.c1mr.read().bits());
-        cortex_m_semihosting::hprintln!("IPCC C2MR:     {:32b}", ipcc.rb.c2mr.read().bits());
-        cortex_m_semihosting::hprintln!("IPCC C2CR:     {:32b}", ipcc.rb.c2cr.read().bits());
-
-        cortex_m_semihosting::hprintln!("WirelessFwInfoTable: {:#?}", unsafe {
-            (*(*hal::tl_mbox::TL_REF_TABLE.as_ptr()).device_info_table).wireless_fw_info_table
-        });
 
         // Enable USB power supply
         hal::pwr::set_usb(true);
@@ -163,22 +155,9 @@ fn usb_poll<B: bus::UsbBus>(
 
 #[inline(never)]
 fn init_mbox(rcc: &mut Rcc, ipcc: &mut Ipcc) -> TlMbox {
-    let sys_config = SysConfig {
-        sys_evt_cb,
-        cmd_evt_cb,
-    };
-
-    let config = TlMboxConfig { sys_config };
+    let config = TlMboxConfig { evt_cb };
 
     TlMbox::tl_init(rcc, ipcc, config)
-}
-
-fn sys_evt_cb() {
-    cortex_m::asm::bkpt();
-}
-
-fn cmd_evt_cb() {
-    cortex_m::asm::bkpt();
 }
 
 fn evt_cb(evt: hal::tl_mbox::evt::EvtBox) {
