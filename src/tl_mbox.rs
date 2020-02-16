@@ -1,6 +1,7 @@
 use core::mem::MaybeUninit;
 
 mod channels;
+pub mod mm;
 pub mod cmd;
 pub mod evt;
 pub mod sys;
@@ -87,7 +88,7 @@ struct MemManagerTable {
     blepool: *const u8,
     blepoolsize: u32,
 
-    pevt_free_buffer_queue: *const LinkedListNode,
+    pevt_free_buffer_queue: *mut LinkedListNode,
 
     traces_evt_pool: *const u8,
     tracespoolsize: u32,
@@ -265,23 +266,9 @@ impl TlMbox {
 
         let sys = sys::Sys::new(ipcc, config.sys_config, unsafe { SYS_CMD_BUF.as_ptr() });
 
-        // Configure MemManager
-        unsafe {
-            unsafe_linked_list::LST_init_head(FREE_BUF_QUEUE.as_mut_ptr());
-            unsafe_linked_list::LST_init_head(LOCAL_FREE_BUF_QUEUE.as_mut_ptr());
+        mm::init();
 
-            TL_MEM_MANAGER_TABLE = MaybeUninit::new(MemManagerTable {
-                spare_ble_buffer: BLE_SPARE_EVT_BUF.as_ptr().cast(),
-                spare_sys_buffer: SYS_SPARE_EVT_BUF.as_ptr().cast(),
-                blepool: EVT_POOL.as_ptr().cast(),
-                blepoolsize: POOL_SIZE as u32,
-                pevt_free_buffer_queue: FREE_BUF_QUEUE.as_ptr(),
-                traces_evt_pool: core::ptr::null(),
-                tracespoolsize: 0,
-            });
-        }
-
-        TlMbox { sys }
+        TlMbox { sys, config }
     }
 
     pub fn interrupt_ipcc_rx_handler(&mut self, ipcc: &mut crate::ipcc::Ipcc) {
