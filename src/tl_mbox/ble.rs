@@ -34,8 +34,7 @@ impl Ble {
             while !LST_is_empty(EVT_QUEUE.as_mut_ptr()) {
                 LST_remove_head(EVT_QUEUE.as_mut_ptr(), node_ptr_ptr);
 
-                let event =
-                    core::mem::transmute::<*mut LinkedListNode, *const evt::EvtPacket>(node_ptr);
+                let event: *mut evt::EvtPacket = node_ptr.cast();
                 let event = EvtBox::new(event);
 
                 queue.enqueue(event).unwrap();

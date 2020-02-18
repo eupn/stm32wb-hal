@@ -59,7 +59,7 @@ pub fn shci_ble_init(ipcc: &mut Ipcc, param: ShciBleInitCmdParam) {
     let packet_ptr: *mut _ = &mut packet;
 
     unsafe {
-        let mut cmd_ptr = core::mem::transmute::<*mut _, *mut CmdPacket>(packet_ptr);
+        let cmd_ptr: *mut CmdPacket = packet_ptr.cast();
 
         (*cmd_ptr).cmdserial.cmd.cmd_code = SHCI_OPCODE_BLE_INIT;
         (*cmd_ptr).cmdserial.cmd.payload_len = core::mem::size_of::<ShciBleInitCmdParam>() as u8;

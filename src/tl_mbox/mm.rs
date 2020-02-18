@@ -39,11 +39,11 @@ impl MemoryManager {
     }
 }
 
-pub fn evt_drop(evt: *const EvtPacket, ipcc: &mut Ipcc) {
+pub fn evt_drop(evt: *mut EvtPacket, ipcc: &mut Ipcc) {
     cortex_m_semihosting::hprintln!("[mm] dropping event: {:?}", evt).unwrap();
 
     unsafe {
-        let list_node = core::mem::transmute::<*const EvtPacket, _>(evt);
+        let list_node: *mut _ = evt.cast();
 
         LST_insert_tail(LOCAL_FREE_BUF_QUEUE.as_mut_ptr(), list_node);
 

@@ -74,13 +74,13 @@ impl EvtPacket {
 /// on `Drop`.
 #[derive(Debug)]
 pub struct EvtBox {
-    ptr: *const EvtPacket,
+    ptr: *mut EvtPacket,
 }
 
 unsafe impl Send for EvtBox {}
 
 impl EvtBox {
-    pub(super) fn new(ptr: *const EvtPacket) -> Self {
+    pub(super) fn new(ptr: *mut EvtPacket) -> Self {
         Self { ptr }
     }
 
