@@ -24,6 +24,7 @@ use usb_device::bus;
 use usb_device::device::UsbDevice;
 use usb_device::prelude::*;
 use usbd_serial::{SerialPort, USB_CLASS_CDC};
+use hal::tl_mbox::shci::ShciBleInitCmdParam;
 
 #[app(device = stm32wb_hal::pac, peripherals = true)]
 const APP: () = {
@@ -127,8 +128,9 @@ const APP: () = {
             .interrupt_ipcc_tx_handler(&mut cx.resources.ipcc);
     }
 
-    #[task(resources = [mbox])]
-    fn evt(cx: evt::Context, evt: EvtBox) {
+    #[task(resources = [mbox, ipcc])]
+    fn evt(mut cx: evt::Context, evt: EvtBox) {
+        let ipcc = &mut cx.resources.ipcc;
         let event = evt.evt();
         cortex_m_semihosting::hprintln!("Got event #{}", event.kind()).unwrap();
 
@@ -160,6 +162,29 @@ const APP: () = {
                 )
                 .unwrap();
             }
+            
+            let param = ShciBleInitCmdParam {
+                p_ble_buffer_address: core::ptr::null(),
+                ble_buffer_size: 0,
+                num_attr_record: 68,
+                num_attr_serv: 8,
+                attr_value_arr_size: 1344,
+                num_of_links: 8,
+                extended_packet_length_enable: 1,
+                pr_write_list_size: 0x3A,
+                mb_lock_count: 0x79,
+                att_mtu: 156,
+                slave_sca: 500,
+                master_sca: 0,
+                ls_source: 1,
+                max_conn_event_length: 0xFFFFFFFF,
+                hs_startup_time: 0x148,
+                viterbi_enable: 1,
+                ll_only: 0,
+                hw_version: 0
+            };
+
+            hal::tl_mbox::shci::shci_ble_init(ipcc, param);
         }
     }
 
