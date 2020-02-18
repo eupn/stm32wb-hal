@@ -260,20 +260,16 @@ pub type HeaplessEvtQueue = spsc::Queue<EvtBox, heapless::consts::U32, u8, spsc:
 pub struct TlMbox {
     sys: sys::Sys,
     mm: mm::MemoryManager,
-    config: TlMboxConfig,
 
     /// Current event that is produced during IPCC IRQ handler execution
     evt_queue: HeaplessEvtQueue,
 }
-
-pub struct TlMboxConfig {}
 
 impl TlMbox {
     /// Initializes low-level transport between CPU1 and BLE stack on CPU2.
     pub fn tl_init(
         rcc: &mut crate::rcc::Rcc,
         ipcc: &mut crate::ipcc::Ipcc,
-        config: TlMboxConfig,
     ) -> TlMbox {
         // Populate reference table with pointers in the shared memory
         unsafe {
@@ -314,7 +310,6 @@ impl TlMbox {
         TlMbox {
             sys,
             mm,
-            config,
             evt_queue,
         }
     }

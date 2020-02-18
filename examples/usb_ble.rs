@@ -13,13 +13,13 @@ use rtfm::app;
 use hal::flash::FlashExt;
 use hal::prelude::*;
 use hal::rcc::{
-    ApbDivider, Config, HDivider, HseDivider, PllConfig, PllSrc, Rcc, SysClkSrc, UsbClkSrc,
+    ApbDivider, Config, HDivider, HseDivider, PllConfig, PllSrc, SysClkSrc, UsbClkSrc,
 };
 use hal::usb::{Peripheral, UsbBus, UsbBusType};
 
 use hal::ipcc::Ipcc;
 use hal::tl_mbox::evt::EvtBox;
-use hal::tl_mbox::{TlMbox, TlMboxConfig, WirelessFwInfoTable};
+use hal::tl_mbox::{TlMbox, WirelessFwInfoTable};
 use usb_device::bus;
 use usb_device::device::UsbDevice;
 use usb_device::prelude::*;
@@ -64,7 +64,7 @@ const APP: () = {
         let mut rcc = rcc.apply_clock_config(clock_config, &mut dp.FLASH.constrain().acr);
 
         let mut ipcc = dp.IPCC.constrain();
-        let mbox = init_mbox(&mut rcc, &mut ipcc);
+        let mbox = TlMbox::tl_init(&mut rcc, &mut ipcc);
 
         // Boot CPU2
         hal::pwr::set_cpu2(true);
@@ -192,13 +192,6 @@ fn usb_poll<B: bus::UsbBus>(
         }
         _ => {}
     }
-}
-
-#[inline(never)]
-fn init_mbox(rcc: &mut Rcc, ipcc: &mut Ipcc) -> TlMbox {
-    let config = TlMboxConfig {};
-
-    TlMbox::tl_init(rcc, ipcc, config)
 }
 
 #[exception]
