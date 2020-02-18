@@ -4,9 +4,9 @@ use core::fmt::{Error, Formatter};
 #[derive(Copy, Clone)]
 #[repr(C, packed)]
 pub struct Cmd {
-    cmd_code: u16,
-    payload_len: u8,
-    payload: [u8; 255],
+    pub cmd_code: u16,
+    pub payload_len: u8,
+    pub payload: [u8; 255],
 }
 
 impl core::fmt::Debug for Cmd {
@@ -26,13 +26,30 @@ impl core::fmt::Debug for Cmd {
 #[derive(Debug)]
 #[repr(C, packed)]
 pub struct CmdSerial {
-    ty: u8,
-    cmd: Cmd,
+    pub ty: u8,
+    pub cmd: Cmd,
 }
 
 #[derive(Debug)]
 #[repr(C, packed)]
 pub struct CmdPacket {
-    header: PacketHeader,
-    cmdserial: CmdSerial,
+    pub header: PacketHeader,
+    pub cmdserial: CmdSerial,
 }
+
+#[derive(Debug)]
+#[repr(C, packed)]
+pub struct AclDataSerial {
+    pub ty: u8,
+    pub handle: u16,
+    pub length: u16,
+    pub acl_data: [u8; 1],
+}
+
+#[derive(Debug)]
+#[repr(C, packed)]
+pub struct AclDataPacket {
+    pub header: PacketHeader,
+    pub acl_data_serial: AclDataSerial,
+}
+

@@ -5,11 +5,20 @@
 
 use cortex_m::interrupt;
 
-#[derive(Copy, Clone)]
-#[repr(C, align(4))]
+#[derive(Debug, Copy, Clone)]
+#[repr(C, packed(4))]
 pub struct LinkedListNode {
     pub next: *mut LinkedListNode,
     pub prev: *mut LinkedListNode,
+}
+
+impl Default for LinkedListNode {
+    fn default() -> Self {
+        LinkedListNode {
+            next: core::ptr::null_mut(),
+            prev: core::ptr::null_mut(),
+        }
+    }
 }
 
 pub unsafe fn LST_init_head(mut listHead: *mut LinkedListNode) {

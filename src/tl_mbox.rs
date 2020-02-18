@@ -4,13 +4,15 @@ use bit_field::BitField;
 use heapless::spsc;
 
 mod channels;
+pub mod consts;
 pub mod cmd;
 pub mod evt;
 pub mod mm;
 pub mod sys;
+mod ble;
 mod unsafe_linked_list;
 
-use crate::tl_mbox::cmd::CmdPacket;
+use crate::tl_mbox::cmd::{CmdPacket, AclDataPacket};
 use crate::tl_mbox::evt::EvtBox;
 use unsafe_linked_list::LinkedListNode;
 
@@ -97,10 +99,10 @@ pub struct DeviceInfoTable {
 #[derive(Debug)]
 #[repr(C, align(4))]
 struct BleTable {
-    pcmd_buffer: *const u8,
+    pcmd_buffer: *mut CmdPacket,
     pcs_buffer: *const u8,
     pevt_queue: *const u8,
-    phci_acl_data_buffer: *const u8,
+    phci_acl_data_buffer: *mut AclDataPacket,
 }
 
 #[derive(Debug)]
@@ -259,10 +261,14 @@ pub type HeaplessEvtQueue = spsc::Queue<EvtBox, heapless::consts::U32, u8, spsc:
 
 pub struct TlMbox {
     sys: sys::Sys,
+    ble: ble::Ble,
     _mm: mm::MemoryManager,
 
-    /// Current event that is produced during IPCC IRQ handler execution
+    /// Current event that is produced during IPCC IRQ handler execution on SYS channel
     evt_queue: HeaplessEvtQueue,
+
+    ///// Current event that is produced during IPCC IRQ handler execution on BLE channel
+    ble_evt_queue: HeaplessEvtQueue,
 }
 
 impl TlMbox {
@@ -294,35 +300,41 @@ impl TlMbox {
             EVT_POOL = MaybeUninit::zeroed();
             SYS_SPARE_EVT_BUF = MaybeUninit::zeroed();
             BLE_SPARE_EVT_BUF = MaybeUninit::zeroed();
+
+            CS_BUFFER = MaybeUninit::zeroed();
+            BLE_CMD_BUFFER = MaybeUninit::zeroed();
+            HCI_ACL_DATA_BUFFER = MaybeUninit::zeroed();
         }
 
         ipcc.init(rcc);
 
         let sys = sys::Sys::new(ipcc, unsafe { SYS_CMD_BUF.as_ptr() });
+        let ble = ble::Ble::new(ipcc);
         let mm = mm::MemoryManager::new();
 
-        unsafe {
-            cortex_m_semihosting::hprintln!("TL_REF_TABLE: {:?}", TL_REF_TABLE.as_ptr()).unwrap();
-        }
-
         let evt_queue = unsafe { heapless::spsc::Queue::u8_sc() };
+        let ble_evt_queue = unsafe { heapless::spsc::Queue::u8_sc() };
 
         TlMbox {
             sys,
+            ble,
             _mm: mm,
             evt_queue,
+            ble_evt_queue,
         }
     }
 
     pub fn interrupt_ipcc_rx_handler(&mut self, ipcc: &mut crate::ipcc::Ipcc) {
         if ipcc.is_rx_pending(channels::cpu2::IPCC_SYSTEM_EVENT_CHANNEL) {
             cortex_m_semihosting::hprintln!("IRQ IPCC_SYSTEM_EVENT_CHANNEL").unwrap();
+
             self.sys.evt_handler(ipcc, &mut self.evt_queue);
         } else if ipcc.is_rx_pending(channels::cpu2::IPCC_THREAD_NOTIFICATION_ACK_CHANNEL) {
             cortex_m_semihosting::hprintln!("IRQ IPCC_THREAD_NOTIFICATION_ACK_CHANNEL").unwrap();
         } else if ipcc.is_rx_pending(channels::cpu2::IPCC_BLE_EVENT_CHANNEL) {
             cortex_m_semihosting::hprintln!("IRQ IPCC_BLE_EVENT_CHANNEL").unwrap();
-        //ble::evt_handler(ipcc, self.config.evt_cb);
+
+            self.ble.evt_handler(ipcc, &mut self.ble_evt_queue);
         } else if ipcc.is_rx_pending(channels::cpu2::IPCC_TRACES_CHANNEL) {
             cortex_m_semihosting::hprintln!("IRQ IPCC_TRACES_CHANNEL").unwrap();
         } else if ipcc.is_rx_pending(channels::cpu2::IPCC_THREAD_CLI_NOTIFICATION_ACK_CHANNEL) {
@@ -335,14 +347,18 @@ impl TlMbox {
 
         if ipcc.is_tx_pending(channels::cpu1::IPCC_SYSTEM_CMD_RSP_CHANNEL) {
             cortex_m_semihosting::hprintln!("IRQ IPCC_SYSTEM_CMD_RSP_CHANNEL").unwrap();
+
             self.sys.cmd_evt_handler(ipcc);
         } else if ipcc.is_tx_pending(channels::cpu1::IPCC_THREAD_OT_CMD_RSP_CHANNEL) {
             cortex_m_semihosting::hprintln!("IQR IPCC_THREAD_OT_CMD_RSP_CHANNEL").unwrap();
         } else if ipcc.is_tx_pending(channels::cpu1::IPCC_MM_RELEASE_BUFFER_CHANNEL) {
             cortex_m_semihosting::hprintln!("IRQ IPCC_MM_RELEASE_BUFFER_CHANNEL").unwrap();
+
             mm::free_buf_handler(ipcc);
         } else if ipcc.is_tx_pending(channels::cpu1::IPCC_HCI_ACL_DATA_CHANNEL) {
             cortex_m_semihosting::hprintln!("IRQ IPCC_HCI_ACL_DATA_CHANNEL").unwrap();
+
+            self.ble.acl_data_handler(ipcc);
         }
     }
 
