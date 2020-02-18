@@ -365,15 +365,13 @@ impl TlMbox {
 
     /// Returns CPU2 wireless firmware information (if present).
     pub fn wireless_fw_info(&self) -> Option<WirelessFwInfoTable> {
-        unsafe {
-            let info = &(*(*TL_REF_TABLE.as_ptr()).device_info_table).wireless_fw_info_table;
+        let info = unsafe { &(*(*TL_REF_TABLE.as_ptr()).device_info_table).wireless_fw_info_table };
 
-            // Zero version indicates that CPU2 wasn't active and didn't fill the information table
-            if info.version != 0 {
-                Some(info.clone())
-            } else {
-                None
-            }
+        // Zero version indicates that CPU2 wasn't active and didn't fill the information table
+        if info.version != 0 {
+            Some(info.clone())
+        } else {
+            None
         }
     }
 
