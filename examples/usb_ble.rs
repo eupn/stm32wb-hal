@@ -1,4 +1,4 @@
-//! CDC-ACM serial port example using cortex-m-rtfm.
+//! HCI BLE transparent mode example to be used with CubeRFMon software.
 #![no_main]
 #![no_std]
 #![allow(non_snake_case)]
