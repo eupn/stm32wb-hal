@@ -4,6 +4,7 @@ use core::mem::MaybeUninit;
 /**
  * The payload of `Evt` for a command status event
  */
+#[derive(Debug, Copy, Clone)]
 #[repr(C, packed)]
 pub struct CsEvt {
     status: u8,
@@ -14,7 +15,7 @@ pub struct CsEvt {
 /**
  * The payload of `Evt` for a command complete event
  */
-#[derive(Debug, Default)]
+#[derive(Debug, Copy, Clone, Default)]
 #[repr(C, packed)]
 pub struct CcEvt {
     num_cmd: u8,
@@ -22,14 +23,14 @@ pub struct CcEvt {
     payload: [u8; 1],
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Copy, Clone, Default)]
 #[repr(C, packed)]
 pub struct AsynchEvt {
     sub_evt_code: u16,
     payload: [u8; 1],
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Copy, Clone, Default)]
 #[repr(C, packed)]
 pub struct Evt {
     evt_code: u8,
@@ -37,7 +38,7 @@ pub struct Evt {
     payload: [u8; 1],
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Copy, Clone, Default)]
 #[repr(C, packed)]
 pub struct EvtSerial {
     kind: u8,
@@ -52,7 +53,7 @@ pub struct EvtSerial {
  * include the header and shall use `EvtPacket` format. Only the command response format on the
  * system channel is different.
  */
-#[derive(Debug, Default)]
+#[derive(Debug, Copy, Clone, Default)]
 #[repr(C, packed)]
 pub struct EvtPacket {
     header: PacketHeader,

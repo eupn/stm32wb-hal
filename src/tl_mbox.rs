@@ -53,30 +53,36 @@ pub struct WirelessFwInfoTable {
 
 impl WirelessFwInfoTable {
     pub fn version_major(&self) -> u8 {
-        (self.version.get_bits(24..31) & 0xff) as u8
+        let version = self.clone().version;
+        (version.get_bits(24..31) & 0xff) as u8
     }
 
     pub fn version_minor(&self) -> u8 {
-        (self.version.get_bits(16..23) & 0xff) as u8
+        let version = self.clone().version;
+        (version.clone().get_bits(16..23) & 0xff) as u8
     }
 
     pub fn subversion(&self) -> u8 {
-        (self.version.get_bits(8..15) & 0xff) as u8
+        let version = self.clone().version;
+        (version.clone().get_bits(8..15) & 0xff) as u8
     }
 
     /// Size of FLASH, expressed in number of 4K sectors.
     pub fn flash_size(&self) -> u8 {
-        (self.memory_size.get_bits(0..7) & 0xff) as u8
+        let memory_size = self.clone().memory_size;
+        (memory_size.clone().get_bits(0..7) & 0xff) as u8
     }
 
     /// Size of SRAM2a, expressed in number of 1K sectors.
     pub fn sram2a_size(&self) -> u8 {
-        (self.memory_size.get_bits(24..31) & 0xff) as u8
+        let memory_size = self.clone().memory_size;
+        (memory_size.clone().get_bits(24..31) & 0xff) as u8
     }
 
     /// Size of SRAM2b, expressed in number of 1K sectors.
     pub fn sram2b_size(&self) -> u8 {
-        (self.memory_size.get_bits(16..23) & 0xff) as u8
+        let memory_size = self.clone().memory_size;
+        (memory_size.clone().get_bits(16..23) & 0xff) as u8
     }
 }
 
@@ -259,7 +265,7 @@ pub type HeaplessEvtQueue = spsc::Queue<EvtBox, heapless::consts::U32, u8, spsc:
 
 pub struct TlMbox {
     sys: sys::Sys,
-    mm: mm::MemoryManager,
+    _mm: mm::MemoryManager,
 
     /// Current event that is produced during IPCC IRQ handler execution
     evt_queue: HeaplessEvtQueue,
@@ -309,7 +315,7 @@ impl TlMbox {
 
         TlMbox {
             sys,
-            mm,
+            _mm: mm,
             evt_queue,
         }
     }
