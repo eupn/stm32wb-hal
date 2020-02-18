@@ -7,9 +7,9 @@ use core::mem::MaybeUninit;
 #[derive(Debug, Copy, Clone)]
 #[repr(C, packed)]
 pub struct CsEvt {
-    status: u8,
-    num_cmd: u8,
-    cmd_code: u16,
+    pub status: u8,
+    pub num_cmd: u8,
+    pub cmd_code: u16,
 }
 
 /**
@@ -18,9 +18,9 @@ pub struct CsEvt {
 #[derive(Debug, Copy, Clone, Default)]
 #[repr(C, packed)]
 pub struct CcEvt {
-    num_cmd: u8,
-    cmd_code: u16,
-    payload: [u8; 1],
+    pub num_cmd: u8,
+    pub cmd_code: u16,
+    pub payload: [u8; 1],
 }
 
 #[derive(Debug, Copy, Clone, Default)]
@@ -33,16 +33,16 @@ pub struct AsynchEvt {
 #[derive(Debug, Copy, Clone, Default)]
 #[repr(C, packed)]
 pub struct Evt {
-    evt_code: u8,
-    payload_len: u8,
-    payload: [u8; 1],
+    pub evt_code: u8,
+    pub payload_len: u8,
+    pub payload: [u8; 1],
 }
 
 #[derive(Debug, Copy, Clone, Default)]
 #[repr(C, packed)]
 pub struct EvtSerial {
-    kind: u8,
-    evt: Evt,
+    pub kind: u8,
+    pub evt: Evt,
 }
 
 /**
@@ -56,8 +56,8 @@ pub struct EvtSerial {
 #[derive(Debug, Copy, Clone, Default)]
 #[repr(C, packed)]
 pub struct EvtPacket {
-    header: PacketHeader,
-    evt_serial: EvtSerial,
+    pub header: PacketHeader,
+    pub evt_serial: EvtSerial,
 }
 
 impl EvtPacket {

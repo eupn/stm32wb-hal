@@ -4,6 +4,7 @@ use bit_field::BitField;
 use heapless::spsc;
 
 mod channels;
+pub mod shci;
 pub mod consts;
 pub mod cmd;
 pub mod evt;
@@ -116,7 +117,7 @@ struct ThreadTable {
 #[derive(Debug)]
 #[repr(C, align(4))]
 struct SysTable {
-    pcmd_buffer: *const CmdPacket,
+    pcmd_buffer: *mut CmdPacket,
     sys_queue: *const LinkedListNode,
 }
 
@@ -308,7 +309,7 @@ impl TlMbox {
 
         ipcc.init(rcc);
 
-        let sys = sys::Sys::new(ipcc, unsafe { SYS_CMD_BUF.as_ptr() });
+        let sys = sys::Sys::new(ipcc);
         let ble = ble::Ble::new(ipcc);
         let mm = mm::MemoryManager::new();
 

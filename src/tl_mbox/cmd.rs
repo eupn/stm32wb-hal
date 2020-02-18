@@ -23,21 +23,21 @@ impl core::fmt::Debug for Cmd {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 #[repr(C, packed)]
 pub struct CmdSerial {
     pub ty: u8,
     pub cmd: Cmd,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 #[repr(C, packed)]
 pub struct CmdPacket {
     pub header: PacketHeader,
     pub cmdserial: CmdSerial,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 #[repr(C, packed)]
 pub struct AclDataSerial {
     pub ty: u8,
@@ -46,7 +46,7 @@ pub struct AclDataSerial {
     pub acl_data: [u8; 1],
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 #[repr(C, packed)]
 pub struct AclDataPacket {
     pub header: PacketHeader,
