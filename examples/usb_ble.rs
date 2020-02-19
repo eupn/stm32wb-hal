@@ -25,6 +25,11 @@ use usb_device::device::UsbDevice;
 use usb_device::prelude::*;
 use usbd_serial::{SerialPort, USB_CLASS_CDC};
 use hal::tl_mbox::shci::ShciBleInitCmdParam;
+use hal::tl_mbox::consts::TlPacketType;
+use core::convert::TryFrom;
+
+const VCP_RX_BUFFER_SIZE: usize = core::mem::size_of::<hal::tl_mbox::cmd::CmdSerial>();
+const VCP_TX_BUFFER_SIZE: usize = core::mem::size_of::<hal::tl_mbox::evt::EvtPacket>() + 254;
 
 #[app(device = stm32wb_hal::pac, peripherals = true)]
 const APP: () = {
@@ -34,6 +39,9 @@ const APP: () = {
 
         mbox: TlMbox,
         ipcc: Ipcc,
+
+        vcp_rx_buf: [u8; VCP_RX_BUFFER_SIZE],
+        vcp_tx_buf: [u8; VCP_TX_BUFFER_SIZE],
     }
 
     #[init]
@@ -97,17 +105,27 @@ const APP: () = {
             serial,
             mbox,
             ipcc,
+            vcp_rx_buf: [0u8; VCP_RX_BUFFER_SIZE],
+            vcp_tx_buf: [0u8; VCP_TX_BUFFER_SIZE],
         }
     }
 
     #[task(binds = USB_HP, resources = [usb_dev, serial])]
     fn usb_tx(mut cx: usb_tx::Context) {
-        usb_poll(&mut cx.resources.usb_dev, &mut cx.resources.serial);
+        if !cx.resources.usb_dev.poll(&mut [cx.resources.serial]) {
+            return;
+        }
     }
 
-    #[task(binds = USB_LP, resources = [usb_dev, serial])]
+    #[task(binds = USB_LP, resources = [usb_dev, serial, vcp_rx_buf], spawn = [vcp_rx])]
     fn usb_rx0(mut cx: usb_rx0::Context) {
-        usb_poll(&mut cx.resources.usb_dev, &mut cx.resources.serial);
+        if !cx.resources.usb_dev.poll(&mut [cx.resources.serial]) {
+            return;
+        }
+
+        if let Ok(count) = cx.resources.serial.read(&mut cx.resources.vcp_rx_buf[..]) {
+            cx.spawn.vcp_rx(count).unwrap();
+        }
     }
 
     #[task(binds = IPCC_C1_RX_IT, resources = [mbox, ipcc], spawn = [evt])]
@@ -189,36 +207,50 @@ const APP: () = {
         }
     }
 
+    #[task(resources = [serial, mbox, ipcc, vcp_rx_buf])]
+    fn vcp_rx(mut cx: vcp_rx::Context, bytes_received: usize) {
+        cortex_m_semihosting::hprintln!("Received {} bytes from VCP", bytes_received).unwrap();
+
+        let cmd_code = cx.resources.vcp_rx_buf[0];
+        let cmd = TlPacketType::try_from(cmd_code);
+        if let Ok(cmd) = cmd {
+            match &cmd {
+                TlPacketType::AclData => {
+                    cortex_m_semihosting::hprintln!("Got ACL DATA cmd").unwrap();
+
+                    // Destination buffer: ble table, phci_acl_data_buffer, acldataserial field
+                    // TODO:
+                }
+
+                TlPacketType::SysCmd => {
+                    cortex_m_semihosting::hprintln!("Got SYS cmd").unwrap();
+
+                    // Destination buffer: SYS table, pcmdbuffer, cmdserial field
+                    // TODO:
+                }
+
+                TlPacketType::LocCmd => {
+                    cortex_m_semihosting::hprintln!("Got LOC cmd").unwrap();
+
+                    // Destination buffer: SYS local cmd
+                    // TODO:
+                }
+
+                _ => {
+                    cortex_m_semihosting::hprintln!("Got other cmd: {:?}", cmd).unwrap();
+                    hal::tl_mbox::ble::ble_send_cmd(&mut cx.resources.ipcc, &cx.resources.vcp_rx_buf[..]);
+                }
+            }
+        } else {
+            cortex_m_semihosting::hprintln!("Got unknown cmd 0x{:02x}", cmd_code).unwrap();
+        }
+    }
+
     // Interrupt handlers used to dispatch software tasks
     extern "C" {
         fn USART1();
     }
 };
-
-fn usb_poll<B: bus::UsbBus>(
-    usb_dev: &mut UsbDevice<'static, B>,
-    serial: &mut SerialPort<'static, B>,
-) {
-    if !usb_dev.poll(&mut [serial]) {
-        return;
-    }
-
-    let mut buf = [0u8; 8];
-
-    match serial.read(&mut buf) {
-        Ok(count) if count > 0 => {
-            // Echo back in upper case
-            for c in buf[0..count].iter_mut() {
-                if 0x61 <= *c && *c <= 0x7a {
-                    *c &= !0x20;
-                }
-            }
-
-            serial.write(&buf[0..count]).ok();
-        }
-        _ => {}
-    }
-}
 
 #[exception]
 fn DefaultHandler(irqn: i16) -> ! {
