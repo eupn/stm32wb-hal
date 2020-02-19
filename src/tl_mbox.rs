@@ -3,17 +3,17 @@ use core::mem::MaybeUninit;
 use bit_field::BitField;
 use heapless::spsc;
 
+pub mod ble;
 mod channels;
-pub mod shci;
-pub mod consts;
 pub mod cmd;
+pub mod consts;
 pub mod evt;
 pub mod mm;
+pub mod shci;
 pub mod sys;
-pub mod ble;
 mod unsafe_linked_list;
 
-use crate::tl_mbox::cmd::{CmdPacket, AclDataPacket};
+use crate::tl_mbox::cmd::{AclDataPacket, CmdPacket};
 use crate::tl_mbox::evt::EvtBox;
 use unsafe_linked_list::LinkedListNode;
 
@@ -256,7 +256,8 @@ static mut BLE_CMD_BUFFER: MaybeUninit<CmdPacket> = MaybeUninit::uninit();
 
 #[link_section = "HCI_ACL_DATA_BUFFER"]
 //                                 fuck these "magic" numbers from ST ---v---v
-static mut HCI_ACL_DATA_BUFFER: MaybeUninit<[u8; TL_PACKET_HEADER_SIZE + 5 + 251]> = MaybeUninit::uninit();
+static mut HCI_ACL_DATA_BUFFER: MaybeUninit<[u8; TL_PACKET_HEADER_SIZE + 5 + 251]> =
+    MaybeUninit::uninit();
 
 pub type HeaplessEvtQueue = spsc::Queue<EvtBox, heapless::consts::U32, u8, spsc::SingleCore>;
 
@@ -271,10 +272,7 @@ pub struct TlMbox {
 
 impl TlMbox {
     /// Initializes low-level transport between CPU1 and BLE stack on CPU2.
-    pub fn tl_init(
-        rcc: &mut crate::rcc::Rcc,
-        ipcc: &mut crate::ipcc::Ipcc,
-    ) -> TlMbox {
+    pub fn tl_init(rcc: &mut crate::rcc::Rcc, ipcc: &mut crate::ipcc::Ipcc) -> TlMbox {
         // Populate reference table with pointers in the shared memory
         unsafe {
             TL_REF_TABLE = MaybeUninit::new(RefTable {

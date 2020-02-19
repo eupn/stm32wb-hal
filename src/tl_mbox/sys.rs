@@ -4,11 +4,13 @@ use core::mem::MaybeUninit;
 use super::channels;
 use crate::ipcc::Ipcc;
 use crate::tl_mbox::cmd::{CmdPacket, CmdSerial};
-use crate::tl_mbox::evt::{EvtBox, EvtSerial, CcEvt};
+use crate::tl_mbox::evt::{CcEvt, EvtBox, EvtSerial};
 use crate::tl_mbox::unsafe_linked_list::{
     LST_init_head, LST_is_empty, LST_remove_head, LinkedListNode,
 };
-use crate::tl_mbox::{evt, HeaplessEvtQueue, SysTable, SYSTEM_EVT_QUEUE, TL_SYS_TABLE, SYS_CMD_BUF};
+use crate::tl_mbox::{
+    evt, HeaplessEvtQueue, SysTable, SYSTEM_EVT_QUEUE, SYS_CMD_BUF, TL_SYS_TABLE,
+};
 
 pub type SysCallback = fn();
 

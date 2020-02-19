@@ -49,7 +49,7 @@ impl TryFrom<u8> for TlPacketType {
             0x40 => Ok(TlPacketType::TracesApp),
             0x41 => Ok(TlPacketType::TracesWl),
 
-            _ => Err(())
+            _ => Err(()),
         }
     }
 }

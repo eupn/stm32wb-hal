@@ -1,10 +1,15 @@
-use crate::tl_mbox::unsafe_linked_list::{LST_init_head, LinkedListNode, LST_is_empty, LST_remove_head};
-use crate::tl_mbox::{EVT_QUEUE, TL_BLE_TABLE, BleTable, TL_REF_TABLE, HeaplessEvtQueue, evt, BLE_CMD_BUFFER, CS_BUFFER, HCI_ACL_DATA_BUFFER};
-use crate::tl_mbox::consts::TlPacketType;
-use crate::tl_mbox::channels;
-use core::mem::MaybeUninit;
 use crate::ipcc::Ipcc;
+use crate::tl_mbox::channels;
+use crate::tl_mbox::consts::TlPacketType;
 use crate::tl_mbox::evt::EvtBox;
+use crate::tl_mbox::unsafe_linked_list::{
+    LST_init_head, LST_is_empty, LST_remove_head, LinkedListNode,
+};
+use crate::tl_mbox::{
+    evt, BleTable, HeaplessEvtQueue, BLE_CMD_BUFFER, CS_BUFFER, EVT_QUEUE, HCI_ACL_DATA_BUFFER,
+    TL_BLE_TABLE, TL_REF_TABLE,
+};
+use core::mem::MaybeUninit;
 
 pub struct Ble {}
 
@@ -17,7 +22,7 @@ impl Ble {
                 pcmd_buffer: BLE_CMD_BUFFER.as_mut_ptr().cast(),
                 pcs_buffer: CS_BUFFER.as_ptr().cast(),
                 pevt_queue: EVT_QUEUE.as_ptr().cast(),
-                phci_acl_data_buffer: HCI_ACL_DATA_BUFFER.as_mut_ptr().cast()
+                phci_acl_data_buffer: HCI_ACL_DATA_BUFFER.as_mut_ptr().cast(),
             });
         }
 
@@ -64,7 +69,8 @@ pub fn ble_send_cmd(ipcc: &mut Ipcc, buf: &[u8]) {
 }
 
 pub(super) fn ble_send_acl_data(ipcc: &mut Ipcc) {
-    let mut cmd_packet = unsafe { &mut *(*TL_REF_TABLE.assume_init().ble_table).phci_acl_data_buffer };
+    let mut cmd_packet =
+        unsafe { &mut *(*TL_REF_TABLE.assume_init().ble_table).phci_acl_data_buffer };
     cmd_packet.acl_data_serial.ty = TlPacketType::AclData as u8;
 
     ipcc.c1_set_flag_channel(channels::cpu1::IPCC_HCI_ACL_DATA_CHANNEL);

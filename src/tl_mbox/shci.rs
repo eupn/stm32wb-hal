@@ -1,8 +1,8 @@
 use crate::ipcc::Ipcc;
-use crate::tl_mbox::{TL_EVT_HEADER_SIZE, TL_CS_EVT_SIZE, TL_PACKET_HEADER_SIZE, TL_SYS_TABLE};
 use crate::tl_mbox::cmd::CmdPacket;
 use crate::tl_mbox::consts::TlPacketType;
 use crate::tl_mbox::sys;
+use crate::tl_mbox::{TL_CS_EVT_SIZE, TL_EVT_HEADER_SIZE, TL_PACKET_HEADER_SIZE, TL_SYS_TABLE};
 
 pub const SHCI_OPCODE_BLE_INIT: u16 = 0xfc66;
 

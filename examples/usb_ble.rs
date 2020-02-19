@@ -12,21 +12,19 @@ use rtfm::app;
 
 use hal::flash::FlashExt;
 use hal::prelude::*;
-use hal::rcc::{
-    ApbDivider, Config, HDivider, HseDivider, PllConfig, PllSrc, SysClkSrc, UsbClkSrc,
-};
+use hal::rcc::{ApbDivider, Config, HDivider, HseDivider, PllConfig, PllSrc, SysClkSrc, UsbClkSrc};
 use hal::usb::{Peripheral, UsbBus, UsbBusType};
 
+use core::convert::TryFrom;
 use hal::ipcc::Ipcc;
+use hal::tl_mbox::consts::TlPacketType;
 use hal::tl_mbox::evt::EvtBox;
+use hal::tl_mbox::shci::ShciBleInitCmdParam;
 use hal::tl_mbox::{TlMbox, WirelessFwInfoTable};
 use usb_device::bus;
 use usb_device::device::UsbDevice;
 use usb_device::prelude::*;
 use usbd_serial::{SerialPort, USB_CLASS_CDC};
-use hal::tl_mbox::shci::ShciBleInitCmdParam;
-use hal::tl_mbox::consts::TlPacketType;
-use core::convert::TryFrom;
 
 const VCP_RX_BUFFER_SIZE: usize = core::mem::size_of::<hal::tl_mbox::cmd::CmdSerial>();
 const VCP_TX_BUFFER_SIZE: usize = core::mem::size_of::<hal::tl_mbox::evt::EvtPacket>() + 254;
@@ -181,7 +179,7 @@ const APP: () = {
                 )
                 .unwrap();
             }*/
-            
+
             let param = ShciBleInitCmdParam {
                 p_ble_buffer_address: core::ptr::null(),
                 ble_buffer_size: 0,
@@ -200,7 +198,7 @@ const APP: () = {
                 hs_startup_time: 0x148,
                 viterbi_enable: 1,
                 ll_only: 0,
-                hw_version: 0
+                hw_version: 0,
             };
 
             hal::tl_mbox::shci::shci_ble_init(ipcc, param);
@@ -238,7 +236,10 @@ const APP: () = {
 
                 _ => {
                     cortex_m_semihosting::hprintln!("Got other cmd: {:?}", cmd).unwrap();
-                    hal::tl_mbox::ble::ble_send_cmd(&mut cx.resources.ipcc, &cx.resources.vcp_rx_buf[..]);
+                    hal::tl_mbox::ble::ble_send_cmd(
+                        &mut cx.resources.ipcc,
+                        &cx.resources.vcp_rx_buf[..],
+                    );
                 }
             }
         } else {

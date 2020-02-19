@@ -16,9 +16,7 @@ impl core::fmt::Debug for Cmd {
         write!(
             f,
             "Cmd ({}, {}, [{}...])",
-            cmd_code,
-            self.payload_len,
-            self.payload[0]
+            cmd_code, self.payload_len, self.payload[0]
         )
     }
 }
@@ -52,4 +50,3 @@ pub struct AclDataPacket {
     pub header: PacketHeader,
     pub acl_data_serial: AclDataSerial,
 }
-
