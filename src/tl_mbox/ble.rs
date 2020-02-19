@@ -51,8 +51,13 @@ impl Ble {
     }
 }
 
-pub(super) fn ble_send_cmd(ipcc: &mut Ipcc) {
-    let mut cmd_packet = unsafe { &mut *(*TL_REF_TABLE.assume_init().ble_table).pcmd_buffer };
+pub fn ble_send_cmd(ipcc: &mut Ipcc, buf: &[u8]) {
+    unsafe {
+        let pcmd_buffer: *mut u8 = (&*TL_REF_TABLE.assume_init().ble_table).pcmd_buffer.cast();
+        core::ptr::copy(buf.as_ptr(), pcmd_buffer, buf.len());
+    }
+
+    let mut cmd_packet = unsafe { &mut *(&*TL_REF_TABLE.assume_init().ble_table).pcmd_buffer };
     cmd_packet.cmdserial.ty = TlPacketType::BleCmd as u8;
 
     ipcc.c1_set_flag_channel(channels::cpu1::IPCC_BLE_CMD_CHANNEL);
