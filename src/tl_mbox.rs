@@ -10,7 +10,7 @@ pub mod cmd;
 pub mod evt;
 pub mod mm;
 pub mod sys;
-mod ble;
+pub mod ble;
 mod unsafe_linked_list;
 
 use crate::tl_mbox::cmd::{CmdPacket, AclDataPacket};
@@ -267,9 +267,6 @@ pub struct TlMbox {
 
     /// Current event that is produced during IPCC IRQ handler execution on SYS channel
     evt_queue: HeaplessEvtQueue,
-
-    ///// Current event that is produced during IPCC IRQ handler execution on BLE channel
-    ble_evt_queue: HeaplessEvtQueue,
 }
 
 impl TlMbox {
@@ -314,14 +311,12 @@ impl TlMbox {
         let mm = mm::MemoryManager::new();
 
         let evt_queue = unsafe { heapless::spsc::Queue::u8_sc() };
-        let ble_evt_queue = unsafe { heapless::spsc::Queue::u8_sc() };
 
         TlMbox {
             sys,
             ble,
             _mm: mm,
             evt_queue,
-            ble_evt_queue,
         }
     }
 
@@ -335,7 +330,7 @@ impl TlMbox {
         } else if ipcc.is_rx_pending(channels::cpu2::IPCC_BLE_EVENT_CHANNEL) {
             cortex_m_semihosting::hprintln!("IRQ IPCC_BLE_EVENT_CHANNEL").unwrap();
 
-            self.ble.evt_handler(ipcc, &mut self.ble_evt_queue);
+            self.ble.evt_handler(ipcc, &mut self.evt_queue);
         } else if ipcc.is_rx_pending(channels::cpu2::IPCC_TRACES_CHANNEL) {
             cortex_m_semihosting::hprintln!("IRQ IPCC_TRACES_CHANNEL").unwrap();
         } else if ipcc.is_rx_pending(channels::cpu2::IPCC_THREAD_CLI_NOTIFICATION_ACK_CHANNEL) {
@@ -375,7 +370,7 @@ impl TlMbox {
         }
     }
 
-    /// Picks one single `EvtBox` from internal event queue.
+    /// Picks single `EvtBox` from internal event queue.
     ///
     /// Internal event queue is populated in IPCC RX IRQ handler.
     pub fn dequeue_event(&mut self) -> Option<EvtBox> {
