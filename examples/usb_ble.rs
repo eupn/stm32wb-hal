@@ -135,7 +135,8 @@ const APP: () = {
         cortex_m_semihosting::hprintln!("Got event #{}", event.kind()).unwrap();
 
         if event.kind() == 18 {
-            if let Some(fw_info) = cx.resources.mbox.wireless_fw_info() {
+            // This is so slow with semihosting that it's blocking the USB device discovery
+            /*if let Some(fw_info) = cx.resources.mbox.wireless_fw_info() {
                 let fw_info: WirelessFwInfoTable = fw_info;
 
                 cortex_m_semihosting::hprintln!("-- CPU2 wireless firmware info --").unwrap();
@@ -161,7 +162,7 @@ const APP: () = {
                     fw_info.sram2b_size() as u32 * 1024
                 )
                 .unwrap();
-            }
+            }*/
             
             let param = ShciBleInitCmdParam {
                 p_ble_buffer_address: core::ptr::null(),
