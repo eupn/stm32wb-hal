@@ -1,6 +1,6 @@
 use crate::ipcc::Ipcc;
 use crate::tl_mbox::{TL_EVT_HEADER_SIZE, TL_CS_EVT_SIZE, TL_PACKET_HEADER_SIZE, TL_SYS_TABLE};
-use crate::tl_mbox::cmd::{CmdSerial, CmdPacket};
+use crate::tl_mbox::cmd::CmdPacket;
 use crate::tl_mbox::consts::TlPacketType;
 use crate::tl_mbox::sys;
 
@@ -63,9 +63,6 @@ pub fn shci_ble_init(ipcc: &mut Ipcc, param: ShciBleInitCmdParam) {
 
         (*cmd_ptr).cmdserial.cmd.cmd_code = SHCI_OPCODE_BLE_INIT;
         (*cmd_ptr).cmdserial.cmd.payload_len = core::mem::size_of::<ShciBleInitCmdParam>() as u8;
-
-        cortex_m_semihosting::hprintln!("cmd_code: 0x{:04x}", (*cmd_ptr).cmdserial.cmd.cmd_code).unwrap();
-        cortex_m_semihosting::hprintln!("len: {}", (*cmd_ptr).cmdserial.cmd.payload_len).unwrap();
 
         let mut p_cmd_buffer = &mut *(*TL_SYS_TABLE.as_mut_ptr()).pcmd_buffer;
         core::ptr::write(p_cmd_buffer, *cmd_ptr);
