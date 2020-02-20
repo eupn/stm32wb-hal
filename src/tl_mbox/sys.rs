@@ -51,8 +51,6 @@ impl Sys {
             *cc
         };
 
-        cortex_m_semihosting::hprintln!("Comand Complete Event: {:#?}", cc_evt).unwrap();
-
         // TODO: send event upstream (callback or queue?)
     }
 
