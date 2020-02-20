@@ -1,5 +1,6 @@
 use crate::ipcc::Ipcc;
 use crate::tl_mbox::channels;
+use crate::tl_mbox::cmd::{CmdPacket, CmdSerial};
 use crate::tl_mbox::consts::TlPacketType;
 use crate::tl_mbox::evt::EvtBox;
 use crate::tl_mbox::unsafe_linked_list::{
@@ -58,12 +59,15 @@ impl Ble {
 
 pub fn ble_send_cmd(ipcc: &mut Ipcc, buf: &[u8]) {
     unsafe {
-        let pcmd_buffer: *mut u8 = (&*TL_REF_TABLE.assume_init().ble_table).pcmd_buffer.cast();
-        core::ptr::copy(buf.as_ptr(), pcmd_buffer, buf.len());
-    }
+        let pcmd_buffer: *mut CmdPacket = (&*TL_REF_TABLE.assume_init().ble_table).pcmd_buffer;
+        let pcmd_serial: *mut CmdSerial = &mut (*pcmd_buffer).cmdserial;
+        let pcmd_serial_buf: *mut u8 = pcmd_serial.cast();
 
-    let mut cmd_packet = unsafe { &mut *(&*TL_REF_TABLE.assume_init().ble_table).pcmd_buffer };
-    cmd_packet.cmdserial.ty = TlPacketType::BleCmd as u8;
+        core::ptr::copy(buf.as_ptr(), pcmd_serial_buf, buf.len());
+
+        let mut cmd_packet = &mut *(&*TL_REF_TABLE.assume_init().ble_table).pcmd_buffer;
+        cmd_packet.cmdserial.ty = TlPacketType::BleCmd as u8;
+    }
 
     ipcc.c1_set_flag_channel(channels::cpu1::IPCC_BLE_CMD_CHANNEL);
 }
