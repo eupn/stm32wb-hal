@@ -43,7 +43,7 @@ impl Sys {
         // 2. Access CmdPacket's cmdserial field and interpret its content as EvtSerial
         // 3. Access EvtSerial's evt field (as Evt) and interpret its payload as CcEvt type.
         // 4. CcEvt type is the actual SHCI response.
-        let cc_evt = unsafe {
+        let _cc_evt = unsafe {
             let pcmd: *const CmdPacket = (&*TL_SYS_TABLE.as_ptr()).pcmd_buffer;
             let cmd_serial: *const CmdSerial = &(*pcmd).cmdserial;
             let evt_serial: *const EvtSerial = cmd_serial.cast();

@@ -215,23 +215,23 @@ const APP: () = {
     }
 
     #[task(resources = [serial, mbox, ipcc, vcp_rx_buf], spawn = [vcp_tx])]
-    fn vcp_rx(mut cx: vcp_rx::Context, bytes_received: usize) {
+    fn vcp_rx(mut cx: vcp_rx::Context, _bytes_received: usize) {
         let cmd_code = cx.resources.vcp_rx_buf[0];
         let cmd = TlPacketType::try_from(cmd_code);
         if let Ok(cmd) = cmd {
             match &cmd {
                 TlPacketType::AclData => {
                     cortex_m_semihosting::hprintln!("Got ACL DATA cmd").unwrap();
-                    todo!()
+
                     // Destination buffer: ble table, phci_acl_data_buffer, acldataserial field
-                    // TODO:
+                    todo!()
                 }
 
                 TlPacketType::SysCmd => {
                     cortex_m_semihosting::hprintln!("Got SYS cmd").unwrap();
 
                     // Destination buffer: SYS table, pcmdbuffer, cmdserial field
-                    // TODO:
+                    todo!()
                 }
 
                 TlPacketType::LocCmd => {
