@@ -8,10 +8,10 @@ mod channels;
 pub mod cmd;
 pub mod consts;
 pub mod evt;
+pub mod lhci;
 pub mod mm;
 pub mod shci;
 pub mod sys;
-pub mod lhci;
 mod unsafe_linked_list;
 
 use crate::tl_mbox::cmd::{AclDataPacket, CmdPacket};

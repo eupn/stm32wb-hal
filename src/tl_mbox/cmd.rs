@@ -1,6 +1,6 @@
+use crate::tl_mbox::evt::{EvtPacket, EvtSerial};
 use crate::tl_mbox::{PacketHeader, TL_EVT_HEADER_SIZE};
 use core::fmt::{Error, Formatter};
-use crate::tl_mbox::evt::{EvtSerial, EvtPacket};
 
 #[derive(Copy, Clone)]
 #[repr(C, packed)]
@@ -15,7 +15,7 @@ impl Default for Cmd {
         Self {
             cmd_code: 0,
             payload_len: 0,
-            payload: [0u8; 255]
+            payload: [0u8; 255],
         }
     }
 }

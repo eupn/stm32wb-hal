@@ -1,7 +1,10 @@
-use crate::tl_mbox::{SafeBootInfoTable, RssInfoTable, WirelessFwInfoTable, TL_REF_TABLE, DeviceInfoTable, TL_EVT_HEADER_SIZE};
 use crate::tl_mbox::cmd::CmdPacket;
-use crate::tl_mbox::evt::{EvtSerial, CcEvt, EvtPacket};
 use crate::tl_mbox::consts::TlPacketType;
+use crate::tl_mbox::evt::{CcEvt, EvtPacket, EvtSerial};
+use crate::tl_mbox::{
+    DeviceInfoTable, RssInfoTable, SafeBootInfoTable, WirelessFwInfoTable, TL_EVT_HEADER_SIZE,
+    TL_REF_TABLE,
+};
 
 use stm32_device_signature;
 
@@ -37,9 +40,10 @@ pub struct LhciC1DeviceInformationCcrp {
 
 impl LhciC1DeviceInformationCcrp {
     pub fn new() -> Self {
-        let DeviceInfoTable { safe_boot_info_table,
+        let DeviceInfoTable {
+            safe_boot_info_table,
             rss_info_table,
-            wireless_fw_info_table
+            wireless_fw_info_table,
         } = unsafe { &*(&*TL_REF_TABLE.as_ptr()).device_info_table }.clone();
 
         let dbgmcu = unsafe { stm32wb_pac::Peripherals::steal() }.DBGMCU;
@@ -49,9 +53,18 @@ impl LhciC1DeviceInformationCcrp {
         // TODO: fill the rest of the fields
 
         let device_id = stm32_device_signature::device_id();
-        let uid96_0 = (device_id[3] as u32) << 24 | (device_id[2] as u32) << 16 | (device_id[1] as u32) << 8 | device_id[0] as u32;
-        let uid96_1 = (device_id[7] as u32) << 24 | (device_id[6] as u32) << 16 | (device_id[5] as u32) << 8 | device_id[4] as u32;
-        let uid96_2 = (device_id[11] as u32) << 24 | (device_id[10] as u32) << 16 | (device_id[9] as u32) << 8 | device_id[8] as u32;
+        let uid96_0 = (device_id[3] as u32) << 24
+            | (device_id[2] as u32) << 16
+            | (device_id[1] as u32) << 8
+            | device_id[0] as u32;
+        let uid96_1 = (device_id[7] as u32) << 24
+            | (device_id[6] as u32) << 16
+            | (device_id[5] as u32) << 8
+            | device_id[4] as u32;
+        let uid96_2 = (device_id[11] as u32) << 24
+            | (device_id[10] as u32) << 16
+            | (device_id[9] as u32) << 8
+            | device_id[8] as u32;
 
         let package_type = unsafe { *PACKAGE_DATA_PTR };
         let uid64 = unsafe { *UID64_PTR };
@@ -72,7 +85,7 @@ impl LhciC1DeviceInformationCcrp {
             safe_boot_info_table,
             rss_info_table,
             wireless_fw_info_table,
-            app_fw_inf: (1 << 8) // 0.0.1
+            app_fw_inf: (1 << 8), // 0.0.1
         }
     }
 
