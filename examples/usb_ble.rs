@@ -12,21 +12,21 @@ use rtfm::app;
 
 use hal::flash::FlashExt;
 use hal::prelude::*;
-use hal::rcc::{ApbDivider, Config, HDivider, HseDivider, PllConfig, PllSrc, SysClkSrc, UsbClkSrc};
+use hal::rcc::{ApbDivider, Config, HDivider, HseDivider, PllConfig, PllSrc, SysClkSrc, UsbClkSrc, StopWakeupClock};
 use hal::usb::{Peripheral, UsbBus, UsbBusType};
 
 use core::convert::TryFrom;
 use hal::ipcc::Ipcc;
+use hal::tl_mbox::cmd::CmdPacket;
 use hal::tl_mbox::consts::TlPacketType;
 use hal::tl_mbox::evt::EvtBox;
+use hal::tl_mbox::lhci::LhciC1DeviceInformationCcrp;
 use hal::tl_mbox::shci::ShciBleInitCmdParam;
 use hal::tl_mbox::TlMbox;
 use usb_device::bus;
 use usb_device::device::UsbDevice;
 use usb_device::prelude::*;
 use usbd_serial::{SerialPort, USB_CLASS_CDC};
-use hal::tl_mbox::cmd::CmdPacket;
-use hal::tl_mbox::lhci::LhciC1DeviceInformationCcrp;
 
 const VCP_RX_BUFFER_SIZE: usize = core::mem::size_of::<hal::tl_mbox::cmd::CmdSerial>();
 const VCP_TX_BUFFER_SIZE: usize = core::mem::size_of::<hal::tl_mbox::evt::EvtPacket>() + 254;
@@ -55,14 +55,18 @@ const APP: () = {
         static mut USB_BUS: Option<bus::UsbBusAllocator<UsbBusType>> = None;
 
         let dp = cx.device;
-        let rcc = dp.RCC.constrain();
+        let mut rcc = dp.RCC.constrain();
+        rcc.set_stop_wakeup_clock(StopWakeupClock::HSI16);
 
         // Fastest clock configuration.
+        // * External low-speed crystal is used (LSE)
         // * 32 MHz HSE with PLL
         // * 64 MHz CPU1, 32 MHz CPU2
         // * 64 MHz for APB1, APB2
         // * USB clock source from PLLQ (32 / 2 * 3 = 48)
+        // * HSI as a clock source after wake-up from low-power mode
         let clock_config = Config::new(SysClkSrc::Pll(PllSrc::Hse(HseDivider::NotDivided)))
+            .with_lse()
             .cpu1_hdiv(HDivider::NotDivided)
             .cpu2_hdiv(HDivider::Div2)
             .apb1_div(ApbDivider::NotDivided)
@@ -256,13 +260,9 @@ const APP: () = {
     #[task(resources = [vcp_tx_buf, serial])]
     fn vcp_tx(cx: vcp_tx::Context, packet: PacketKind) {
         let len = match packet {
-            PacketKind::Event(evt) => {
-                evt.write(&mut cx.resources.vcp_tx_buf[..]).unwrap()
-            },
+            PacketKind::Event(evt) => evt.write(&mut cx.resources.vcp_tx_buf[..]).unwrap(),
 
-            PacketKind::CmdPacket(cmd) => {
-                cmd.write(&mut cx.resources.vcp_tx_buf[..]).unwrap()
-            },
+            PacketKind::CmdPacket(cmd) => cmd.write(&mut cx.resources.vcp_tx_buf[..]).unwrap(),
         };
 
         cx.resources
