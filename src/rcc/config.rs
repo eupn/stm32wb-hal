@@ -2,6 +2,9 @@ use super::mux::*;
 
 #[derive(Debug)]
 pub struct Config {
+    pub(crate) lse: bool,
+    pub(crate) lsi1: bool,
+
     pub(crate) sysclk_src: SysClkSrc,
 
     pub(crate) pll_cfg: PllConfig,
@@ -21,6 +24,8 @@ impl Default for Config {
     /// SYSCLK = 4 MHz, HCLK = 4MHz, CPU1 = CPU2 = 4MHz, APB1 = APB2 = 4MHz
     fn default() -> Self {
         Config {
+            lse: false,
+            lsi1: false,
             sysclk_src: SysClkSrc::Hsi,
             pll_cfg: PllConfig::default(),
             apb1_div: ApbDivider::NotDivided,
@@ -84,6 +89,16 @@ impl Config {
 
     pub fn usb_src(mut self, src: UsbClkSrc) -> Self {
         self.usb_src = src;
+        self
+    }
+
+    pub fn with_lse(mut self) -> Self {
+        self.lse = true;
+        self
+    }
+
+    pub fn with_lsi1(mut self) -> Self {
+        self.lsi1 = true;
         self
     }
 }
@@ -212,4 +227,10 @@ impl HDivider {
             HDivider::Div512 => 512,
         }
     }
+}
+
+#[derive(Debug)]
+pub enum StopWakeupClock {
+    MSI = 0,
+    HSI16 = 1,
 }

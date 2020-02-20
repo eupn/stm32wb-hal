@@ -24,6 +24,23 @@ pub struct Rcc {
 
 impl Rcc {
     pub fn apply_clock_config(mut self, config: config::Config, acr: &mut ACR) -> Self {
+        // Configure LSE if needed
+        if config.lse {
+            // Enable backup domain access to access LSE registers
+            crate::pwr::set_backup_access(true);
+
+            self.rb.bdcr.modify(|_, w| w.lseon().set_bit());
+            while !self.rb.bdcr.read().lserdy().bit_is_set() {}
+        }
+
+        // Configure LSI1 if needed
+        if config.lsi1 {
+            self.rb.csr.modify(|_, w| w.lsi1on().clear_bit());
+        } else {
+            self.rb.csr.modify(|_, w| w.lsi1on().set_bit());
+            while !self.rb.csr.read().lsi1rdy().bit_is_set() {}
+        }
+
         // Select system clock source
         let sysclk_bits = match &config.sysclk_src {
             SysClkSrc::Msi(_msi_range) => todo!(),
@@ -215,6 +232,16 @@ impl Rcc {
         // This dummy read uses `read_volatile` internally, so it shouldn't be removed by an optimizer.
         let _ = self.rb.ahb3enr.read().ipccen();
     }
+
+    /// Sets default clock source after exit from STOP modes.
+    pub fn set_stop_wakeup_clock(&mut self, stop_wakeup_clock: StopWakeupClock) {
+        let bit = match stop_wakeup_clock {
+            StopWakeupClock::MSI => false,
+            StopWakeupClock::HSI16 => true,
+        };
+
+        self.rb.cfgr.modify(|_, w| w.stopwuck().bit(bit));
+    }
 }
 
 /// Extension trait that constrains the `RCC` peripheral
@@ -237,11 +264,11 @@ impl RccExt for RCC {
 /// The existence of this value indicates that the clock configuration can no longer be changed
 #[derive(Clone, Copy, Debug)]
 pub struct Clocks {
-    sysclk: Hertz,  // Max 64 MHz
+    sysclk: Hertz, // Max 64 MHz
 
-    hclk1: Hertz,   // Max 64 MHz
-    hclk2: Hertz,   // Max 32 MHz
-    hclk4: Hertz,   // Max 64 MHz
+    hclk1: Hertz, // Max 64 MHz
+    hclk2: Hertz, // Max 32 MHz
+    hclk4: Hertz, // Max 64 MHz
 
     systick: Hertz, // Max 64 MHz
 
