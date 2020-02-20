@@ -12,7 +12,10 @@ use rtfm::app;
 
 use hal::flash::FlashExt;
 use hal::prelude::*;
-use hal::rcc::{ApbDivider, Config, HDivider, HseDivider, PllConfig, PllSrc, SysClkSrc, UsbClkSrc, StopWakeupClock};
+use hal::rcc::{
+    ApbDivider, Config, HDivider, HseDivider, PllConfig, PllSrc, StopWakeupClock, SysClkSrc,
+    UsbClkSrc,
+};
 use hal::usb::{Peripheral, UsbBus, UsbBusType};
 
 use core::convert::TryFrom;
