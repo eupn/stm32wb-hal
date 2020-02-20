@@ -29,6 +29,10 @@ cortex-m-semihosting = { version = "0.3.5", features = ["jlink-quirks"] }
 bit_field = "0.10.0"
 heapless = "0.5.3"
 
+[dependencies.stm32-device-signature]
+version = "0.3.0"
+features = ["stm32wb5x"]
+
 [dependencies.cast]
 version  = "0.2.2"
 default-features = false

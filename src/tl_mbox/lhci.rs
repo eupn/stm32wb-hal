@@ -3,10 +3,15 @@ use crate::tl_mbox::cmd::CmdPacket;
 use crate::tl_mbox::evt::{EvtSerial, CcEvt, EvtPacket};
 use crate::tl_mbox::consts::TlPacketType;
 
+use stm32_device_signature;
+
 const TL_BLEEVT_CC_OPCODE: u8 = 0x0e;
 const TL_BLEEVT_CS_OPCODE: u8 = 0x0f;
 
 const LHCI_OPCODE_C1_DEVICE_INF: u16 = 0xfd62;
+
+const PACKAGE_DATA_PTR: *const u8 = 0x1FFF_7500 as _;
+const UID64_PTR: *const u32 = 0x1FFF_7580 as _;
 
 #[derive(Debug, Copy, Clone)]
 #[repr(C, packed)]
@@ -43,21 +48,31 @@ impl LhciC1DeviceInformationCcrp {
 
         // TODO: fill the rest of the fields
 
+        let device_id = stm32_device_signature::device_id();
+        let uid96_0 = (device_id[3] as u32) << 24 | (device_id[2] as u32) << 16 | (device_id[1] as u32) << 8 | device_id[0] as u32;
+        let uid96_1 = (device_id[7] as u32) << 24 | (device_id[6] as u32) << 16 | (device_id[5] as u32) << 8 | device_id[4] as u32;
+        let uid96_2 = (device_id[11] as u32) << 24 | (device_id[10] as u32) << 16 | (device_id[9] as u32) << 8 | device_id[8] as u32;
+
+        let package_type = unsafe { *PACKAGE_DATA_PTR };
+        let uid64 = unsafe { *UID64_PTR };
+        let st_company_id = unsafe { *UID64_PTR.offset(1) } >> 8 & 0x00FF_FFFF;
+        let device_type_id = (unsafe { *UID64_PTR.offset(1) } & 0x000000FF) as u8;
+
         LhciC1DeviceInformationCcrp {
             status: 0,
             rev_id,
             dev_code_id,
-            package_type: 0,
-            device_type_id: 0,
-            st_company_id: 0,
-            uid64: 0,
-            uid96_0: 0,
-            uid96_1: 0,
-            uid96_2: 0,
+            package_type,
+            device_type_id,
+            st_company_id,
+            uid64,
+            uid96_0,
+            uid96_1,
+            uid96_2,
             safe_boot_info_table,
             rss_info_table,
             wireless_fw_info_table,
-            app_fw_inf: 0
+            app_fw_inf: (1 << 8) // 0.0.1
         }
     }
 
