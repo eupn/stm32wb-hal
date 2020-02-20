@@ -1,4 +1,7 @@
-use crate::tl_mbox::PacketHeader;
+use crate::tl_mbox::cmd::{AclDataPacket, AclDataSerial};
+use crate::tl_mbox::consts::TlPacketType;
+use crate::tl_mbox::{PacketHeader, TL_EVT_HEADER_SIZE};
+use core::convert::TryFrom;
 use core::mem::MaybeUninit;
 
 /**
@@ -90,6 +93,43 @@ impl EvtBox {
         unsafe {
             self.ptr.copy_to(evt.as_mut_ptr(), 1);
             evt.assume_init()
+        }
+    }
+
+    /// Writes an underlying EvtPacket into the provided buffer.
+    /// Returns a number of bytes that were written.
+    /// Returns an error if event kind is unknown or if provided buffer size is not enough.
+    pub fn write(&self, buf: &mut [u8]) -> Result<usize, ()> {
+        unsafe {
+            let evt_kind = TlPacketType::try_from((*self.ptr).evt_serial.kind)?;
+
+            let evt_data: *const EvtPacket = self.ptr.cast();
+            let evt_serial: *const EvtSerial = &(*evt_data).evt_serial;
+            let evt_serial_buf: *const u8 = evt_serial.cast();
+
+            let acl_data: *const AclDataPacket = self.ptr.cast();
+            let acl_serial: *const AclDataSerial = &(*acl_data).acl_data_serial;
+            let acl_serial_buf: *const u8 = acl_serial.cast();
+
+            Ok(if let TlPacketType::AclData = evt_kind {
+                let len = (*acl_serial).length as usize + 5;
+                if len > buf.len() {
+                    return Err(());
+                }
+
+                core::ptr::copy(evt_serial_buf, buf.as_mut_ptr(), len);
+
+                len
+            } else {
+                let len = (*evt_serial).evt.payload_len as usize + TL_EVT_HEADER_SIZE;
+                if len > buf.len() {
+                    return Err(());
+                }
+
+                core::ptr::copy(acl_serial_buf, buf.as_mut_ptr(), len);
+
+                len
+            })
         }
     }
 }
