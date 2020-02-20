@@ -40,8 +40,6 @@ impl MemoryManager {
 }
 
 pub fn evt_drop(evt: *mut EvtPacket, ipcc: &mut Ipcc) {
-    cortex_m_semihosting::hprintln!("[mm] dropping event: {:?}", evt).unwrap();
-
     unsafe {
         let list_node: *mut _ = evt.cast();
 
@@ -61,8 +59,6 @@ pub fn evt_drop(evt: *mut EvtPacket, ipcc: &mut Ipcc) {
 
 /// Gives free event buffers back to the CPU2 from local buffer queue.
 pub fn send_free_buf() {
-    cortex_m_semihosting::hprintln!("[mm] sending free buffer").unwrap();
-
     unsafe {
         let mut node_ptr: *mut LinkedListNode = core::ptr::null_mut();
         let node_ptr_ptr: *mut *mut LinkedListNode = &mut node_ptr;
