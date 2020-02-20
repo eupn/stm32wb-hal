@@ -20,14 +20,22 @@ use hal::ipcc::Ipcc;
 use hal::tl_mbox::consts::TlPacketType;
 use hal::tl_mbox::evt::EvtBox;
 use hal::tl_mbox::shci::ShciBleInitCmdParam;
-use hal::tl_mbox::{TlMbox, WirelessFwInfoTable};
+use hal::tl_mbox::TlMbox;
 use usb_device::bus;
 use usb_device::device::UsbDevice;
 use usb_device::prelude::*;
 use usbd_serial::{SerialPort, USB_CLASS_CDC};
+use hal::tl_mbox::cmd::CmdPacket;
+use hal::tl_mbox::lhci::LhciC1DeviceInformationCcrp;
 
 const VCP_RX_BUFFER_SIZE: usize = core::mem::size_of::<hal::tl_mbox::cmd::CmdSerial>();
 const VCP_TX_BUFFER_SIZE: usize = core::mem::size_of::<hal::tl_mbox::evt::EvtPacket>() + 254;
+
+#[derive(Debug)]
+enum PacketKind {
+    Event(EvtBox),
+    CmdPacket(CmdPacket),
+}
 
 #[app(device = stm32wb_hal::pac, peripherals = true)]
 const APP: () = {
@@ -109,14 +117,14 @@ const APP: () = {
     }
 
     #[task(binds = USB_HP, resources = [usb_dev, serial])]
-    fn usb_tx(mut cx: usb_tx::Context) {
+    fn usb_tx(cx: usb_tx::Context) {
         if !cx.resources.usb_dev.poll(&mut [cx.resources.serial]) {
             return;
         }
     }
 
     #[task(binds = USB_LP, resources = [usb_dev, serial, vcp_rx_buf], spawn = [vcp_rx])]
-    fn usb_rx0(mut cx: usb_rx0::Context) {
+    fn usb_rx0(cx: usb_rx0::Context) {
         if !cx.resources.usb_dev.poll(&mut [cx.resources.serial]) {
             return;
         }
@@ -144,11 +152,10 @@ const APP: () = {
             .interrupt_ipcc_tx_handler(&mut cx.resources.ipcc);
     }
 
-    #[task(resources = [mbox, ipcc])]
+    #[task(resources = [mbox, ipcc, serial], spawn = [vcp_tx])]
     fn evt(mut cx: evt::Context, evt: EvtBox) {
         let ipcc = &mut cx.resources.ipcc;
         let event = evt.evt();
-        cortex_m_semihosting::hprintln!("Got event #{}", event.kind()).unwrap();
 
         if event.kind() == 18 {
             // This is so slow with semihosting that it's blocking the USB device discovery
@@ -202,20 +209,20 @@ const APP: () = {
             };
 
             hal::tl_mbox::shci::shci_ble_init(ipcc, param);
+        } else {
+            cx.spawn.vcp_tx(PacketKind::Event(evt)).unwrap();
         }
     }
 
-    #[task(resources = [serial, mbox, ipcc, vcp_rx_buf])]
+    #[task(resources = [serial, mbox, ipcc, vcp_rx_buf], spawn = [vcp_tx])]
     fn vcp_rx(mut cx: vcp_rx::Context, bytes_received: usize) {
-        cortex_m_semihosting::hprintln!("Received {} bytes from VCP", bytes_received).unwrap();
-
         let cmd_code = cx.resources.vcp_rx_buf[0];
         let cmd = TlPacketType::try_from(cmd_code);
         if let Ok(cmd) = cmd {
             match &cmd {
                 TlPacketType::AclData => {
                     cortex_m_semihosting::hprintln!("Got ACL DATA cmd").unwrap();
-
+                    todo!()
                     // Destination buffer: ble table, phci_acl_data_buffer, acldataserial field
                     // TODO:
                 }
@@ -228,14 +235,13 @@ const APP: () = {
                 }
 
                 TlPacketType::LocCmd => {
-                    cortex_m_semihosting::hprintln!("Got LOC cmd").unwrap();
+                    let mut cmd_packet = CmdPacket::default();
+                    LhciC1DeviceInformationCcrp::new().write(&mut cmd_packet);
 
-                    // Destination buffer: SYS local cmd
-                    // TODO:
+                    cx.spawn.vcp_tx(PacketKind::CmdPacket(cmd_packet)).unwrap();
                 }
 
                 _ => {
-                    cortex_m_semihosting::hprintln!("Got other cmd: {:?}", cmd).unwrap();
                     hal::tl_mbox::ble::ble_send_cmd(
                         &mut cx.resources.ipcc,
                         &cx.resources.vcp_rx_buf[..],
@@ -245,6 +251,24 @@ const APP: () = {
         } else {
             cortex_m_semihosting::hprintln!("Got unknown cmd 0x{:02x}", cmd_code).unwrap();
         }
+    }
+
+    #[task(resources = [vcp_tx_buf, serial])]
+    fn vcp_tx(cx: vcp_tx::Context, packet: PacketKind) {
+        let len = match packet {
+            PacketKind::Event(evt) => {
+                evt.write(&mut cx.resources.vcp_tx_buf[..]).unwrap()
+            },
+
+            PacketKind::CmdPacket(cmd) => {
+                cmd.write(&mut cx.resources.vcp_tx_buf[..]).unwrap()
+            },
+        };
+
+        cx.resources
+            .serial
+            .write(&cx.resources.vcp_tx_buf[..len][..])
+            .unwrap();
     }
 
     // Interrupt handlers used to dispatch software tasks
