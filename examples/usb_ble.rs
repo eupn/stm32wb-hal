@@ -12,11 +12,9 @@ use rtfm::app;
 
 use hal::flash::FlashExt;
 use hal::prelude::*;
-use hal::rcc::{
-    ApbDivider, Config, HDivider, HseDivider, PllConfig, PllSrc, StopWakeupClock, SysClkSrc,
-    UsbClkSrc,
-};
+use hal::rcc::{ApbDivider, Config, HDivider, HseDivider, PllConfig, PllSrc, StopWakeupClock, SysClkSrc, UsbClkSrc, RtcClkSrc, RfWakeupClock};
 use hal::usb::{Peripheral, UsbBus, UsbBusType};
+use hal::rtc::Rtc;
 
 use core::convert::TryFrom;
 use hal::ipcc::Ipcc;
@@ -81,9 +79,13 @@ const APP: () = {
                 q: Some(4),
                 p: Some(3),
             })
-            .usb_src(UsbClkSrc::PllQ);
+            .usb_src(UsbClkSrc::PllQ)
+            .rtc_src(RtcClkSrc::Lse)
+            .rf_wkp_sel(RfWakeupClock::Lse);
 
         let mut rcc = rcc.apply_clock_config(clock_config, &mut dp.FLASH.constrain().acr);
+
+        let rtc = hal::rtc::Rtc::rtc(dp.RTC, &mut rcc);
 
         let mut ipcc = dp.IPCC.constrain();
         let mbox = TlMbox::tl_init(&mut rcc, &mut ipcc);
