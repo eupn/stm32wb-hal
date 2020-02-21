@@ -139,7 +139,9 @@ impl Rcc {
         };
 
         // Set RF wake-up clock source
-        self.rb.csr.modify(|_, w| unsafe { w.rfwkpsel().bits(config.rf_wkp_src as u8) });
+        self.rb
+            .csr
+            .modify(|_, w| unsafe { w.rfwkpsel().bits(config.rf_wkp_src as u8) });
 
         self
     }

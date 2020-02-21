@@ -260,8 +260,8 @@ pub enum RfWakeupClock {
 #[derive(Debug, Copy, Clone)]
 pub enum RtcClkSrc {
     None = 0b00,
-    Lse  = 0b01,
-    Lsi  = 0b10,
+    Lse = 0b01,
+    Lsi = 0b10,
     HseDiv32 = 0b11,
 }
 

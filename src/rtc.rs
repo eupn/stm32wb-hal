@@ -22,10 +22,9 @@ impl Rtc {
         rcc.rb.apb1enr1.modify(|_, w| w.rtcapben().set_bit());
 
         // select RTC clock source and enable RTC
-        rcc.rb.bdcr.modify(|_, w| unsafe {
-            w.rtcsel()
-                .bits(rcc.config.rtc_src as u8)
-        });
+        rcc.rb
+            .bdcr
+            .modify(|_, w| unsafe { w.rtcsel().bits(rcc.config.rtc_src as u8) });
         rcc.rb.bdcr.modify(|_, w| w.rtcen().set_bit());
 
         rcc.clocks.rtcclk = match rcc.config.rtc_src {
@@ -56,12 +55,12 @@ impl Rtc {
 
                 rtc.cr.modify(|_, w| unsafe { w.wcksel().bits(0b000) });
 
-                rtc.prer
-                    .modify(|_, w| unsafe {
-                        w
-                            .prediv_s().bits(SYNCH_PREDIV)
-                            .prediv_a().bits(ASYNCH_PREDIV)
-                    });
+                rtc.prer.modify(|_, w| unsafe {
+                    w.prediv_s()
+                        .bits(SYNCH_PREDIV)
+                        .prediv_a()
+                        .bits(ASYNCH_PREDIV)
+                });
             }
             init_mode(&rtc, false);
 
