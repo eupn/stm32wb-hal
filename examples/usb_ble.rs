@@ -200,7 +200,7 @@ const APP: () = {
             }*/
 
             let param = ShciBleInitCmdParam {
-                p_ble_buffer_address: core::ptr::null(),
+                p_ble_buffer_address: 0,
                 ble_buffer_size: 0,
                 num_attr_record: 68,
                 num_attr_serv: 8,

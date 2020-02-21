@@ -10,7 +10,7 @@ pub const SHCI_OPCODE_BLE_INIT: u16 = 0xfc66;
 #[repr(C, packed)]
 pub struct ShciBleInitCmdParam {
     /// NOT USED CURRENTLY
-    pub p_ble_buffer_address: *const u8,
+    pub p_ble_buffer_address: u32,
 
     /// Size of the Buffer allocated in pBleBufferAddress
     pub ble_buffer_size: u32,
