@@ -50,8 +50,6 @@ impl LhciC1DeviceInformationCcrp {
         let rev_id = dbgmcu.idcode.read().rev_id().bits();
         let dev_code_id = dbgmcu.idcode.read().dev_id().bits();
 
-        // TODO: fill the rest of the fields
-
         let device_id = stm32_device_signature::device_id();
         let uid96_0 = (device_id[3] as u32) << 24
             | (device_id[2] as u32) << 16

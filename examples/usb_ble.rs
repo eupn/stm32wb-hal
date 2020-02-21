@@ -16,7 +16,6 @@ use hal::rcc::{
     ApbDivider, Config, HDivider, HseDivider, PllConfig, PllSrc, RfWakeupClock, RtcClkSrc,
     StopWakeupClock, SysClkSrc, UsbClkSrc,
 };
-use hal::rtc::Rtc;
 use hal::usb::{Peripheral, UsbBus, UsbBusType};
 
 use core::convert::TryFrom;
@@ -88,7 +87,8 @@ const APP: () = {
 
         let mut rcc = rcc.apply_clock_config(clock_config, &mut dp.FLASH.constrain().acr);
 
-        let rtc = hal::rtc::Rtc::rtc(dp.RTC, &mut rcc);
+        // RTC is required for proper operation of BLE stack
+        let _rtc = hal::rtc::Rtc::rtc(dp.RTC, &mut rcc);
 
         let mut ipcc = dp.IPCC.constrain();
         let mbox = TlMbox::tl_init(&mut rcc, &mut ipcc);

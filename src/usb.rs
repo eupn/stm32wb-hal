@@ -4,6 +4,8 @@
 //!
 //! See `examples` directory for usage examples.
 
+#![cfg(feature = "stm32-usbd")]
+
 use crate::stm32::{RCC, USB};
 use stm32_usbd::UsbPeripheral;
 
