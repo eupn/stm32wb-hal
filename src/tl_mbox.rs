@@ -269,6 +269,9 @@ pub struct TlMbox {
 
     /// Current event that is produced during IPCC IRQ handler execution on SYS channel
     evt_queue: HeaplessEvtQueue,
+
+    /// Last received Command Complete event.
+    last_cc_evt: Option<evt::CcEvt>,
 }
 
 impl TlMbox {
@@ -316,6 +319,7 @@ impl TlMbox {
             ble,
             _mm: mm,
             evt_queue,
+            last_cc_evt: None,
         }
     }
 
@@ -335,7 +339,7 @@ impl TlMbox {
 
     pub fn interrupt_ipcc_tx_handler(&mut self, ipcc: &mut crate::ipcc::Ipcc) {
         if ipcc.is_tx_pending(channels::cpu1::IPCC_SYSTEM_CMD_RSP_CHANNEL) {
-            self.sys.cmd_evt_handler(ipcc);
+            self.last_cc_evt = Some(self.sys.cmd_evt_handler(ipcc));
         } else if ipcc.is_tx_pending(channels::cpu1::IPCC_THREAD_OT_CMD_RSP_CHANNEL) {
             todo!()
         } else if ipcc.is_tx_pending(channels::cpu1::IPCC_MM_RELEASE_BUFFER_CHANNEL) {
@@ -362,5 +366,13 @@ impl TlMbox {
     /// Internal event queue is populated in IPCC RX IRQ handler.
     pub fn dequeue_event(&mut self) -> Option<EvtBox> {
         self.evt_queue.dequeue()
+    }
+
+    /// Retrieves last Command Complete event and removes it from mailbox.
+    pub fn pop_last_cc_evt(&mut self) -> Option<evt::CcEvt> {
+        self.last_cc_evt.and_then(|evt| {
+            self.last_cc_evt = None; // Remove event
+            Some(evt)
+        })
     }
 }

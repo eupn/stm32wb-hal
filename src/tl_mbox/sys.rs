@@ -32,7 +32,7 @@ impl Sys {
         Sys {}
     }
 
-    pub fn cmd_evt_handler(&self, ipcc: &mut Ipcc) {
+    pub fn cmd_evt_handler(&self, ipcc: &mut Ipcc) -> CcEvt {
         ipcc.c1_set_tx_channel(channels::cpu1::IPCC_SYSTEM_CMD_RSP_CHANNEL, false);
 
         // ST's command response data structure is really convoluted.
@@ -43,15 +43,13 @@ impl Sys {
         // 2. Access CmdPacket's cmdserial field and interpret its content as EvtSerial
         // 3. Access EvtSerial's evt field (as Evt) and interpret its payload as CcEvt type.
         // 4. CcEvt type is the actual SHCI response.
-        let _cc_evt = unsafe {
+        unsafe {
             let pcmd: *const CmdPacket = (&*TL_SYS_TABLE.as_ptr()).pcmd_buffer;
             let cmd_serial: *const CmdSerial = &(*pcmd).cmdserial;
             let evt_serial: *const EvtSerial = cmd_serial.cast();
             let cc: *const CcEvt = (*evt_serial).evt.payload.as_ptr().cast();
             *cc
-        };
-
-        // TODO: send event upstream (callback or queue?)
+        }
     }
 
     pub fn evt_handler(&self, ipcc: &mut Ipcc, queue: &mut HeaplessEvtQueue) {
