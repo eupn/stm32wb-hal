@@ -19,18 +19,23 @@ pub const HSE_FREQ: u32 = 32_000_000;
 
 pub struct Rcc {
     pub clocks: Clocks,
+    pub config: config::Config,
     pub(crate) rb: RCC,
 }
 
 impl Rcc {
     pub fn apply_clock_config(mut self, config: config::Config, acr: &mut ACR) -> Self {
+        self.config = config.clone();
+
+        // Enable backup domain access to access LSE/RTC registers
+        crate::pwr::set_backup_access(true);
+
         // Configure LSE if needed
         if config.lse {
-            // Enable backup domain access to access LSE registers
-            crate::pwr::set_backup_access(true);
-
             self.rb.bdcr.modify(|_, w| w.lseon().set_bit());
             while !self.rb.bdcr.read().lserdy().bit_is_set() {}
+
+            self.clocks.lse = Some(32768.hz());
         }
 
         // Configure LSI1 if needed
@@ -46,6 +51,8 @@ impl Rcc {
             SysClkSrc::Msi(_msi_range) => todo!(),
             SysClkSrc::Hsi => todo!(),
             SysClkSrc::HseSys(hse_div) => {
+                self.clocks.hse = Some(HSE_FREQ.hz());
+
                 self.clocks.sysclk = match hse_div {
                     HseDivider::NotDivided => HSE_FREQ.hz(),
                     HseDivider::Div2 => (HSE_FREQ / 2).hz(),
@@ -131,6 +138,9 @@ impl Rcc {
             UsbClkSrc::Msi => todo!(),
         };
 
+        // Set RF wake-up clock source
+        self.rb.csr.modify(|_, w| unsafe { w.rfwkpsel().bits(config.rf_wkp_src as u8) });
+
         self
     }
 
@@ -145,6 +155,8 @@ impl Rcc {
             }
             PllSrc::Hsi => (HSI_FREQ, 0b10),
             PllSrc::Hse(div) => {
+                self.clocks.hse = Some(HSE_FREQ.hz());
+
                 let (divided, f_input) = match div {
                     HseDivider::NotDivided => (false, HSE_FREQ),
                     HseDivider::Div2 => (true, HSE_FREQ / 2),
@@ -254,6 +266,7 @@ impl RccExt for RCC {
     fn constrain(self) -> Rcc {
         Rcc {
             clocks: Clocks::default(),
+            config: Config::default(),
             rb: self,
         }
     }
@@ -272,15 +285,18 @@ pub struct Clocks {
 
     systick: Hertz, // Max 64 MHz
 
+    pub(crate) lse: Option<Hertz>,
+    pub(crate) hse: Option<Hertz>, // Must be exactly 32 MHz
+
     pclk1: Hertz,
     tim_pclk1: Hertz,
 
     pclk2: Hertz,
     tim_pclk2: Hertz,
 
-    lsi: Hertz,
+    pub(crate) lsi: Hertz,
 
-    rtcclk: Hertz,
+    pub(crate) rtcclk: Hertz,
 
     rng: Option<Hertz>,
     adc: Option<Hertz>,
@@ -310,6 +326,8 @@ impl Default for Clocks {
             hclk2: 4.mhz(),
             hclk4: 4.mhz(),
             systick: 4.mhz(),
+            lse: None,
+            hse: None,
             pclk1: 4.mhz(),
             tim_pclk1: 4.mhz(),
             pclk2: 4.mhz(),
@@ -345,5 +363,9 @@ impl Clocks {
 
     pub fn pclk2(&self) -> Hertz {
         self.pclk2
+    }
+
+    pub fn lsi(&self) -> Hertz {
+        self.lsi
     }
 }

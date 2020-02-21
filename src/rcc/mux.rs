@@ -9,7 +9,7 @@ pub enum PllSrc {
 }
 
 /// System clock (SYSCLK) source selection.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum SysClkSrc {
     /// Multi-speed internal RC oscillator
     Msi(MsiRange),

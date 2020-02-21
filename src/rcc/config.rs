@@ -1,6 +1,6 @@
 use super::mux::*;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Config {
     pub(crate) lse: bool,
     pub(crate) lsi1: bool,
@@ -17,6 +17,8 @@ pub struct Config {
     pub(crate) hclk_hdiv: HDivider,
 
     pub(crate) usb_src: UsbClkSrc,
+    pub(crate) rtc_src: RtcClkSrc,
+    pub(crate) rf_wkp_src: RfWakeupClock,
 }
 
 impl Default for Config {
@@ -34,6 +36,8 @@ impl Default for Config {
             cpu2_hdiv: HDivider::NotDivided,
             hclk_hdiv: HDivider::NotDivided,
             usb_src: UsbClkSrc::default(),
+            rtc_src: RtcClkSrc::default(),
+            rf_wkp_src: RfWakeupClock::None,
         }
     }
 }
@@ -99,6 +103,16 @@ impl Config {
 
     pub fn with_lsi1(mut self) -> Self {
         self.lsi1 = true;
+        self
+    }
+
+    pub fn rtc_src(mut self, src: RtcClkSrc) -> Self {
+        self.rtc_src = src;
+        self
+    }
+
+    pub fn rf_wkp_sel(mut self, sel: RfWakeupClock) -> Self {
+        self.rf_wkp_src = sel;
         self
     }
 }
@@ -233,4 +247,26 @@ impl HDivider {
 pub enum StopWakeupClock {
     MSI = 0,
     HSI16 = 1,
+}
+
+#[derive(Debug, Copy, Clone)]
+pub enum RfWakeupClock {
+    None = 0b00,
+    Lse = 0b01,
+    Lsi = 0b10,
+    HsiDiv1024 = 0b11,
+}
+
+#[derive(Debug, Copy, Clone)]
+pub enum RtcClkSrc {
+    None = 0b00,
+    Lse  = 0b01,
+    Lsi  = 0b10,
+    HseDiv32 = 0b11,
+}
+
+impl Default for RtcClkSrc {
+    fn default() -> Self {
+        RtcClkSrc::None
+    }
 }
