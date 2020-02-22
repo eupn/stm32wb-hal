@@ -16,7 +16,7 @@ pub struct Config {
     pub(crate) cpu2_hdiv: HDivider,
     pub(crate) hclk_hdiv: HDivider,
 
-    pub(crate) usb_src: UsbClkSrc,
+    pub(crate) usb_src: Option<UsbClkSrc>,
     pub(crate) rtc_src: RtcClkSrc,
     pub(crate) rf_wkp_src: RfWakeupClock,
 }
@@ -35,7 +35,7 @@ impl Default for Config {
             cpu1_hdiv: HDivider::NotDivided,
             cpu2_hdiv: HDivider::NotDivided,
             hclk_hdiv: HDivider::NotDivided,
-            usb_src: UsbClkSrc::default(),
+            usb_src: None,
             rtc_src: RtcClkSrc::default(),
             rf_wkp_src: RfWakeupClock::None,
         }
@@ -92,7 +92,7 @@ impl Config {
     }
 
     pub fn usb_src(mut self, src: UsbClkSrc) -> Self {
-        self.usb_src = src;
+        self.usb_src = Some(src);
         self
     }
 

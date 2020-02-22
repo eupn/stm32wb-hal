@@ -125,18 +125,18 @@ impl Rcc {
         self.clocks.pclk2 = (self.clocks.hclk1.0 / config.apb2_div.divisor()).hz();
 
         // Select USB clock source
-        self.rb
-            .ccipr
-            .modify(|_r, w| unsafe { w.clk48sel().bits(config.usb_src as u8) });
+        if let Some(usb_src) = config.usb_src {
+            self.rb
+                .ccipr
+                .modify(|_r, w| unsafe { w.clk48sel().bits(usb_src as u8) });
 
-        self.clocks.clk48 = match config.usb_src {
-            UsbClkSrc::Hsi48 => todo!(),
-
-            UsbClkSrc::PllSai1Q => todo!(),
-
-            UsbClkSrc::PllQ => self.clocks.pllq,
-            UsbClkSrc::Msi => todo!(),
-        };
+            self.clocks.clk48 = match usb_src {
+                UsbClkSrc::Hsi48 => todo!(),
+                UsbClkSrc::PllSai1Q => todo!(),
+                UsbClkSrc::PllQ => self.clocks.pllq,
+                UsbClkSrc::Msi => todo!(),
+            };
+        }
 
         // Set RF wake-up clock source
         self.rb
