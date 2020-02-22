@@ -132,6 +132,25 @@ impl EvtBox {
             })
         }
     }
+
+    /// Returns the size of a buffer required to hold this event.
+    pub fn size(&self) -> Result<usize, ()> {
+        unsafe {
+            let evt_kind = TlPacketType::try_from((*self.ptr).evt_serial.kind)?;
+
+            let evt_data: *const EvtPacket = self.ptr.cast();
+            let evt_serial: *const EvtSerial = &(*evt_data).evt_serial;
+
+            let acl_data: *const AclDataPacket = self.ptr.cast();
+            let acl_serial: *const AclDataSerial = &(*acl_data).acl_data_serial;
+
+            if let TlPacketType::AclData = evt_kind {
+                Ok((*acl_serial).length as usize + 5)
+            } else {
+                Ok((*evt_serial).evt.payload_len as usize + TL_EVT_HEADER_SIZE)
+            }
+        }
+    }
 }
 
 impl Drop for EvtBox {
