@@ -15,7 +15,7 @@ pub mod sys;
 mod unsafe_linked_list;
 
 use crate::tl_mbox::cmd::{AclDataPacket, CmdPacket};
-use crate::tl_mbox::evt::EvtBox;
+use crate::tl_mbox::evt::{EvtBox, EvtSerial};
 use unsafe_linked_list::LinkedListNode;
 
 #[derive(Debug, Copy, Clone)]
