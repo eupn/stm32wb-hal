@@ -26,6 +26,20 @@ pub struct CcEvt {
     pub payload: [u8; 1],
 }
 
+impl CcEvt {
+    pub fn write(&self, buf: &mut [u8]) {
+        unsafe {
+            let len = core::mem::size_of::<CcEvt>();
+            assert!(buf.len() >= len);
+
+            let self_ptr: *const CcEvt = self;
+            let self_buf_ptr: *const u8 = self_ptr.cast();
+
+            core::ptr::copy(self_buf_ptr, buf.as_mut_ptr(), len);
+        }
+    }
+}
+
 #[derive(Debug, Copy, Clone, Default)]
 #[repr(C, packed)]
 pub struct AsynchEvt {
