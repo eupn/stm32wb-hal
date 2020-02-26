@@ -9,6 +9,7 @@ use crate::tl_mbox::{
 use stm32_device_signature;
 
 const TL_BLEEVT_CC_OPCODE: u8 = 0x0e;
+#[allow(dead_code)] // Not used currently but reserved
 const TL_BLEEVT_CS_OPCODE: u8 = 0x0f;
 
 const LHCI_OPCODE_C1_DEVICE_INF: u16 = 0xfd62;

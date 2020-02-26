@@ -146,6 +146,7 @@ impl Rcc {
         self
     }
 
+    #[allow(unreachable_code)] // TODO: remove
     fn configure_and_wait_for_pll(&mut self, config: &PllConfig, src: &PllSrc) {
         // Select PLL and PLLSAI1 clock source [RM0434, p. 233]
         let (f_input, src_bits) = match src {

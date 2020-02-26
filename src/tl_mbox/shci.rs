@@ -48,6 +48,7 @@ pub struct ShciBleInitCmdPacket {
 }
 
 pub const TL_BLEEVT_CS_PACKET_SIZE: usize = TL_EVT_HEADER_SIZE + TL_CS_EVT_SIZE;
+#[allow(dead_code)] // Not used currently but reserved
 const TL_BLEEVT_CS_BUFFER_SIZE: usize = TL_PACKET_HEADER_SIZE + TL_BLEEVT_CS_PACKET_SIZE;
 
 pub fn shci_ble_init(ipcc: &mut Ipcc, param: ShciBleInitCmdParam) {

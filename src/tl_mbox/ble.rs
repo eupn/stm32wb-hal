@@ -72,6 +72,7 @@ pub fn ble_send_cmd(ipcc: &mut Ipcc, buf: &[u8]) {
     ipcc.c1_set_flag_channel(channels::cpu1::IPCC_BLE_CMD_CHANNEL);
 }
 
+#[allow(dead_code)] // Not used currently but reserved
 pub(super) fn ble_send_acl_data(ipcc: &mut Ipcc) {
     let mut cmd_packet =
         unsafe { &mut *(*TL_REF_TABLE.assume_init().ble_table).phci_acl_data_buffer };

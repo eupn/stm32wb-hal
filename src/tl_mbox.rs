@@ -15,7 +15,7 @@ pub mod sys;
 mod unsafe_linked_list;
 
 use crate::tl_mbox::cmd::{AclDataPacket, CmdPacket};
-use crate::tl_mbox::evt::{EvtBox, EvtSerial};
+use crate::tl_mbox::evt::EvtBox;
 use unsafe_linked_list::LinkedListNode;
 
 #[derive(Debug, Copy, Clone)]
@@ -194,6 +194,7 @@ static mut FREE_BUF_QUEUE: MaybeUninit<LinkedListNode> = MaybeUninit::uninit();
 // Not in shared RAM
 static mut LOCAL_FREE_BUF_QUEUE: MaybeUninit<LinkedListNode> = MaybeUninit::uninit();
 
+#[allow(dead_code)] // Not used currently but reserved
 #[link_section = "TRACES_EVT_QUEUE"]
 static mut TRACES_EVT_QUEUE: MaybeUninit<LinkedListNode> = MaybeUninit::uninit();
 
