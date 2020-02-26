@@ -1,5 +1,7 @@
-# The size of this file must be exactly the same as in other memory_xx.x files.
-# Memory size for STM32WB55xE with 512K FLASH
+/*
+ * The size of this file must be exactly the same as in other memory_xx.x files.
+ * Memory size for STM32WB55xE with 512K FLASH.
+ */
 
 MEMORY
 {
