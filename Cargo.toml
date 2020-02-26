@@ -55,8 +55,15 @@ features = ["ram_access_2x16"]
 optional = true
 
 [features]
+
+xC-package = []
+xE-package = []
+xG-package = []
+
 rt = ["stm32wb-pac/rt"]
-unproven = ["embedded-hal/unproven"]
+
+# Note: We use the xC package because it has the least amount of available resources.
+default = [ "rt", "xC-package" ]
 
 [dev-dependencies]
 cortex-m-rtfm = "0.5"
