@@ -62,8 +62,7 @@ xG-package = []
 
 rt = ["stm32wb-pac/rt"]
 
-# Note: We use the xC package because it has the least amount of available resources.
-default = [ "rt", "xC-package" ]
+default = [ "rt" ]
 
 [dev-dependencies]
 cortex-m-rtfm = "0.5"
