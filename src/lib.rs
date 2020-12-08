@@ -25,6 +25,7 @@ pub mod prelude;
 pub mod pwr;
 pub mod rcc;
 pub mod rtc;
+pub mod spi;
 pub mod time;
 pub mod tl_mbox;
 pub mod usb;
