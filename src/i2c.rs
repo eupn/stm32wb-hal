@@ -7,7 +7,7 @@ use crate::gpio::gpioa::{PA10, PA7, PA9};
 use crate::gpio::gpiob::{PB10, PB11, PB13, PB14, PB4, PB6, PB7, PB8, PB9};
 use crate::gpio::gpioc::{PC0, PC1};
 use crate::gpio::{Alternate, OpenDrain, Output, AF4};
-use crate::hal::blocking::i2c::{Read, Write, WriteRead};
+use crate::hal::blocking::i2c::{Read, Write, WriteIter, WriteIterRead, WriteRead};
 use crate::rcc::Rcc;
 use crate::time::Hertz;
 
@@ -223,6 +223,23 @@ macro_rules! hal {
                 }
             }
 
+            impl<PINS> WriteIter for I2c<$I2CX, PINS> {
+                type Error = Error;
+
+                fn write<B: IntoIterator<Item=u8>>(&mut self, addr: u8, bytes: B) -> Result<(), Error> {
+                    let bytes = bytes.into_iter();
+
+                    let mut bytes_allocated = [0u8; 255];
+                    let mut len = 0;
+                    for byte in bytes.into_iter() {
+                        assert!(len < 256);
+                        bytes_allocated[len] = byte;
+                        len += 1;
+                    }
+                    Write::write(self, addr, &bytes_allocated[..len])
+                }
+            }
+
             impl<PINS> Read for I2c<$I2CX, PINS> {
                 type Error = Error;
 
@@ -319,6 +336,28 @@ macro_rules! hal {
                     // automatic STOP - due to autoend
 
                     Ok(())
+                }
+            }
+
+            impl<PINS> WriteIterRead for I2c<$I2CX, PINS> {
+                type Error = Error;
+
+                fn write_iter_read<B: IntoIterator<Item=u8>>(
+                    &mut self,
+                    addr: u8,
+                    bytes: B,
+                    buffer: &mut [u8]
+                ) -> Result<(), Error> {
+                    let bytes = bytes.into_iter();
+
+                    let mut bytes_allocated = [0u8; 255];
+                    let mut len = 0;
+                    for byte in bytes.into_iter() {
+                        assert!(len < 256);
+                        bytes_allocated[len] = byte;
+                        len += 1;
+                    }
+                    WriteRead::write_read(self, addr, &bytes_allocated[..len], buffer)
                 }
             }
         )+
