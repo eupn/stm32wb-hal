@@ -8,7 +8,6 @@ use crate::gpio::gpioc::{PC1, PC2, PC3};
 use crate::gpio::gpiod::{PD0, PD1, PD3, PD4};
 use crate::gpio::{Alternate, Output, PushPull, AF3, AF5};
 use crate::hal;
-// use crate::hal::blocking::spi::{Read, Write, WriteRead};
 use crate::rcc::Rcc;
 use crate::time::Hertz;
 
@@ -18,6 +17,7 @@ pub use crate::hal::spi::{Mode, Phase, Polarity, MODE_0, MODE_1, MODE_2, MODE_3}
 
 /// SPI error
 #[derive(Debug)]
+#[non_exhaustive]
 pub enum Error {
     Busy,
     FrameError,
@@ -27,8 +27,6 @@ pub enum Error {
     ModeFault,
     /// CRC error
     Crc,
-    #[doc(hidden)]
-    _Extensible,
 }
 
 pub trait Pins<SPI> {}
@@ -149,22 +147,29 @@ pins! {
 }
 
 #[derive(Debug)]
-pub struct Spi<SPI, PINS> {
+pub struct Spi<SPI, PINS, WordSize> {
     spi: SPI,
     pins: PINS,
+    _word_size: core::marker::PhantomData<WordSize>,
 }
 
-pub trait SpiExt<SPI>: Sized {
-    fn spi<PINS, T>(self, pins: PINS, mode: Mode, freq: T, rcc: &mut Rcc) -> Spi<SPI, PINS>
+pub trait SpiExt<SPI, WordSize>: Sized {
+    fn spi<PINS, T>(
+        self,
+        pins: PINS,
+        mode: Mode,
+        freq: T,
+        rcc: &mut Rcc,
+    ) -> Spi<SPI, PINS, WordSize>
     where
         PINS: Pins<SPI>,
         T: Into<Hertz>;
 }
 
 macro_rules! spi {
-    ($($SPIX:ident: ($spiX:ident, $apbXenr:ident, $spiXen:ident, $pclkX:ident),)+) => {
+    ($($SPIX:ident: ($spiX:ident, $apbXenr:ident, $spiXen:ident, $pclkX:ident, $data_size:ty, $ds_reg:literal),)+) => {
         $(
-            impl<PINS> Spi<$SPIX, PINS> {
+            impl<PINS> Spi<$SPIX, PINS, $data_size> {
                 pub fn $spiX<T>(
                     spi: $SPIX,
                     pins: PINS,
@@ -200,7 +205,7 @@ macro_rules! spi {
                     // lsbfirst: MSB first
                     // ssm: enable software slave management (NSS pin free for other uses)
                     // ssi: set nss high = master mode
-                    // dff: 8 bit frames
+                    // crcen: disable CRC
                     // bidimode: 2-line unidirectional
                     // spe: enable the SPI bus
                     #[allow(unused)]
@@ -221,17 +226,22 @@ macro_rules! spi {
                             .set_bit()
                             .rxonly()
                             .clear_bit()
-                            .dff()
+                            .crcen()
                             .clear_bit()
+                            // .dff()
+                            // .clear_bit()
                             .bidimode()
                             .clear_bit()
                             .spe()
                             .set_bit()
                     });
 
-                    // XXX: what about cr2?
+                    // Frame size
+                    spi.cr2.write(|w| unsafe {
+                        w.ds().bits($ds_reg)
+                    });
 
-                    Spi { spi, pins }
+                    Spi { spi, pins, _word_size: Default::default() }
                 }
 
                 pub fn free(self) -> ($SPIX, PINS) {
@@ -239,8 +249,8 @@ macro_rules! spi {
                 }
             }
 
-            impl SpiExt<$SPIX> for $SPIX {
-                fn spi<PINS, T>(self, pins: PINS, mode: Mode, freq: T, rcc: &mut Rcc) -> Spi<$SPIX, PINS>
+            impl SpiExt<$SPIX, $data_size> for $SPIX {
+                fn spi<PINS, T>(self, pins: PINS, mode: Mode, freq: T, rcc: &mut Rcc) -> Spi<$SPIX, PINS, $data_size>
                 where
                     PINS: Pins<$SPIX>,
                     T: Into<Hertz>
@@ -249,10 +259,10 @@ macro_rules! spi {
                     }
             }
 
-            impl<PINS> hal::spi::FullDuplex<u8> for Spi<$SPIX, PINS> {
+            impl<PINS> hal::spi::FullDuplex<$data_size> for Spi<$SPIX, PINS, $data_size> {
                 type Error = Error;
 
-                fn read(&mut self) -> nb::Result<u8, Error> {
+                fn read(&mut self) -> nb::Result<$data_size, Error> {
                     let sr = self.spi.sr.read();
 
                     Err(if sr.ovr().bit_is_set() {
@@ -265,14 +275,15 @@ macro_rules! spi {
                         // NOTE(read_volatile) read only 1 byte (the svd2rust API only allows
                         // reading a half-word)
                         return Ok(unsafe {
-                            ptr::read_volatile(&self.spi.dr as *const _ as *const u8)
+                            // XXX for !u8
+                            ptr::read_volatile(&self.spi.dr as *const _ as *const $data_size)
                         });
                     } else {
                         nb::Error::WouldBlock
                     })
                 }
 
-                fn send(&mut self, byte: u8) -> nb::Result<(), Error> {
+                fn send(&mut self, word: $data_size) -> nb::Result<(), Error> {
                     let sr = self.spi.sr.read();
 
                     Err(if sr.ovr().bit_is_set() {
@@ -283,7 +294,8 @@ macro_rules! spi {
                         nb::Error::Other(Error::Crc)
                     } else if sr.txe().bit_is_set() {
                         // NOTE(write_volatile) see note above
-                        unsafe { ptr::write_volatile(&self.spi.dr as *const _ as *mut u8, byte) }
+                        // XXX see above
+                        unsafe { ptr::write_volatile(&self.spi.dr as *const _ as *mut $data_size, word) }
                         return Ok(());
                     } else {
                         nb::Error::WouldBlock
@@ -292,17 +304,17 @@ macro_rules! spi {
 
             }
 
-            impl<PINS> crate::hal::blocking::spi::transfer::Default<u8> for Spi<$SPIX, PINS> {}
+            impl<PINS> crate::hal::blocking::spi::transfer::Default<$data_size> for Spi<$SPIX, PINS, $data_size> {}
 
-            impl<PINS> crate::hal::blocking::spi::write::Default<u8> for Spi<$SPIX, PINS> {}
+            impl<PINS> crate::hal::blocking::spi::write::Default<$data_size> for Spi<$SPIX, PINS, $data_size> {}
         )+
     }
 }
 
 spi! {
-    SPI1: (spi1, apb2enr, spi1en, pclk1),
-}
+    SPI1: (spi1, apb2enr, spi1en, pclk1, u8, 0b0111),
+    SPI2: (spi2, apb1enr1, spi2en, pclk1, u8, 0b0111),
 
-spi! {
-    SPI2: (spi2, apb1enr1, spi2en, pclk1),
+    SPI1: (spi1_u16, apb2enr, spi1en, pclk1, u16, 0b1111),
+    SPI2: (spi2_u16, apb1enr1, spi2en, pclk1, u16, 0b1111),
 }
