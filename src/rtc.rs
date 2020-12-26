@@ -210,5 +210,5 @@ fn bcd2_to_byte(bcd: (u8, u8)) -> u8 {
 
     let tmp = ((value & 0xF0) >> 0x4) * 10;
 
-    (tmp + (value & 0x0F))
+    tmp + (value & 0x0F)
 }
