@@ -20,7 +20,7 @@ pub const HSE_FREQ: u32 = 32_000_000;
 pub struct Rcc {
     pub clocks: Clocks,
     pub config: config::Config,
-    pub(crate) rb: RCC,
+    pub rb: RCC,
 }
 
 impl Rcc {
