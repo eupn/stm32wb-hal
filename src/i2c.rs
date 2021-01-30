@@ -23,7 +23,7 @@ pub enum Error {
     Nack,
     // Overrun, // slave mode only
     // Pec, // SMBUS mode only
-    // Timeout, // SMBUS mode only
+    Timeout,
     // Alert, // SMBUS mode only
 }
 
@@ -63,6 +63,8 @@ pub struct I2c<I2C, PINS> {
 
 macro_rules! busy_wait {
     ($i2c:expr, $flag:ident) => {
+        let mut i = 0;
+
         loop {
             let isr = $i2c.isr.read();
 
@@ -76,6 +78,11 @@ macro_rules! busy_wait {
                 break;
             } else {
                 // try again
+                i += 1;
+
+                if i > 1_000_000 {
+                    return Err(Error::Timeout)
+                }
             }
         }
     };
