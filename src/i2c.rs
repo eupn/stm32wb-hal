@@ -1,6 +1,6 @@
 //! Inter-Integrated Circuit (I2C) bus
 
-use core::sync::atomic::{Ordering, self};
+use core::sync::atomic::{self, Ordering};
 
 use crate::stm32::{I2C1, I2C3};
 use cast::u8;
@@ -13,9 +13,9 @@ use crate::hal::blocking::i2c::{Read, Write, WriteIter, WriteIterRead, WriteRead
 use crate::rcc::Rcc;
 use crate::time::Hertz;
 
-use embedded_dma::{StaticReadBuffer, StaticWriteBuffer};
-use crate::dma::{Transmit, TransferPayload, TxDma, Transfer, R, RxDma, W, Receive};
+use crate::dma::{Receive, RxDma, Transfer, TransferPayload, Transmit, TxDma, R, W};
 use crate::dmamux::DmaMuxIndex;
+use embedded_dma::{StaticReadBuffer, StaticWriteBuffer};
 /// I2C error
 #[derive(Debug)]
 #[non_exhaustive]
@@ -86,7 +86,7 @@ macro_rules! busy_wait {
                 i += 1;
 
                 if i > 1_000_000 {
-                    return Err(Error::Timeout)
+                    return Err(Error::Timeout);
                 }
             }
         }
@@ -414,13 +414,31 @@ pub type I2cRxDma<I2C, PINS, CHANNEL> = RxDma<I2cPayload<I2C, PINS>, CHANNEL>;
 macro_rules! i2c_dma {
     ($I2Ci:ident, $Ci:ident, $dmamuxTX:path, $dmamuxRX:path) => {
         impl<PINS> I2c<$I2Ci, PINS> {
-            pub fn with_tx_dma(self, channel: $Ci, address: u8, autoend: bool) -> I2cTxDma<$I2Ci, PINS, $Ci> {
-                let payload = I2cPayload { i2c: self, address, autoend };
+            pub fn with_tx_dma(
+                self,
+                channel: $Ci,
+                address: u8,
+                autoend: bool,
+            ) -> I2cTxDma<$I2Ci, PINS, $Ci> {
+                let payload = I2cPayload {
+                    i2c: self,
+                    address,
+                    autoend,
+                };
                 I2cTxDma { payload, channel }
             }
 
-            pub fn with_rx_dma(self, channel: $Ci, address: u8, autoend: bool) -> I2cRxDma<$I2Ci, PINS, $Ci> {
-                let payload = I2cPayload { i2c: self, address, autoend };
+            pub fn with_rx_dma(
+                self,
+                channel: $Ci,
+                address: u8,
+                autoend: bool,
+            ) -> I2cRxDma<$I2Ci, PINS, $Ci> {
+                let payload = I2cPayload {
+                    i2c: self,
+                    address,
+                    autoend,
+                };
                 I2cRxDma { payload, channel }
             }
         }
@@ -476,8 +494,10 @@ macro_rules! i2c_dma {
                 self.channel.set_memory_address(ptr as u32, true);
                 self.channel.set_transfer_length(len);
                 self.channel.set_mem2mem(false);
-                self.channel.set_direction(crate::dma::Direction::FromMemory);
-                self.channel.set_priority_level(crate::dma::Priority::Medium);
+                self.channel
+                    .set_direction(crate::dma::Direction::FromMemory);
+                self.channel
+                    .set_priority_level(crate::dma::Priority::Medium);
                 self.channel.set_word_size(crate::dma::WordSize::BITS8);
 
                 // Prepare to send `bytes`
@@ -552,8 +572,10 @@ macro_rules! i2c_dma {
                 self.channel.set_memory_address(ptr as u32, true);
                 self.channel.set_transfer_length(len);
                 self.channel.set_mem2mem(false);
-                self.channel.set_direction(crate::dma::Direction::FromPeripheral);
-                self.channel.set_priority_level(crate::dma::Priority::Medium);
+                self.channel
+                    .set_direction(crate::dma::Direction::FromPeripheral);
+                self.channel
+                    .set_priority_level(crate::dma::Priority::Medium);
                 self.channel.set_word_size(crate::dma::WordSize::BITS8);
 
                 // Prepare to send `bytes`

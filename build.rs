@@ -11,7 +11,7 @@ fn main() {
         cfg!(feature = "xE-package"),
         cfg!(feature = "xG-package"),
     ) {
-        | (false, false, false)
+        (false, false, false)
         | (true, true, true)
         | (false, true, true)
         | (true, false, true)

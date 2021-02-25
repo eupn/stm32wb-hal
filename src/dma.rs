@@ -7,8 +7,8 @@ use core::{
 };
 use embedded_dma::{StaticReadBuffer, StaticWriteBuffer};
 
-use crate::rcc::Rcc;
 use crate::pac::DMAMUX1;
+use crate::rcc::Rcc;
 
 #[derive(Debug)]
 #[non_exhaustive]
@@ -23,8 +23,8 @@ pub enum Half {
 }
 
 pub struct CircBuffer<BUFFER, PAYLOAD>
-    where
-        BUFFER: 'static,
+where
+    BUFFER: 'static,
 {
     buffer: &'static mut [BUFFER; 2],
     payload: PAYLOAD,
@@ -32,9 +32,9 @@ pub struct CircBuffer<BUFFER, PAYLOAD>
 }
 
 impl<BUFFER, PAYLOAD> CircBuffer<BUFFER, PAYLOAD>
-    where
-        &'static mut [BUFFER; 2]: StaticWriteBuffer,
-        BUFFER: 'static,
+where
+    &'static mut [BUFFER; 2]: StaticWriteBuffer,
+    BUFFER: 'static,
 {
     pub(crate) fn new(buf: &'static mut [BUFFER; 2], payload: PAYLOAD) -> Self {
         CircBuffer {
@@ -57,8 +57,8 @@ pub trait TransferPayload {
 }
 
 pub struct Transfer<MODE, BUFFER, PAYLOAD>
-    where
-        PAYLOAD: TransferPayload,
+where
+    PAYLOAD: TransferPayload,
 {
     _mode: PhantomData<MODE>,
     buffer: BUFFER,
@@ -66,8 +66,8 @@ pub struct Transfer<MODE, BUFFER, PAYLOAD>
 }
 
 impl<BUFFER, PAYLOAD> Transfer<R, BUFFER, PAYLOAD>
-    where
-        PAYLOAD: TransferPayload,
+where
+    PAYLOAD: TransferPayload,
 {
     pub(crate) fn r(buffer: BUFFER, payload: PAYLOAD) -> Self {
         Transfer {
@@ -79,8 +79,8 @@ impl<BUFFER, PAYLOAD> Transfer<R, BUFFER, PAYLOAD>
 }
 
 impl<BUFFER, PAYLOAD> Transfer<W, BUFFER, PAYLOAD>
-    where
-        PAYLOAD: TransferPayload,
+where
+    PAYLOAD: TransferPayload,
 {
     pub(crate) fn w(buffer: BUFFER, payload: PAYLOAD) -> Self {
         Transfer {
@@ -92,8 +92,8 @@ impl<BUFFER, PAYLOAD> Transfer<W, BUFFER, PAYLOAD>
 }
 
 impl<MODE, BUFFER, PAYLOAD> Drop for Transfer<MODE, BUFFER, PAYLOAD>
-    where
-        PAYLOAD: TransferPayload,
+where
+    PAYLOAD: TransferPayload,
 {
     fn drop(&mut self) {
         self.payload.stop();
@@ -716,28 +716,28 @@ pub trait Transmit {
 
 /// Trait for circular DMA readings from peripheral to memory.
 pub trait CircReadDma<B, RS>: Receive
-    where
-        &'static mut [B; 2]: StaticWriteBuffer<Word = RS>,
-        B: 'static,
-        Self: core::marker::Sized,
+where
+    &'static mut [B; 2]: StaticWriteBuffer<Word = RS>,
+    B: 'static,
+    Self: core::marker::Sized,
 {
     fn circ_read(self, buffer: &'static mut [B; 2]) -> CircBuffer<B, Self>;
 }
 
 /// Trait for DMA readings from peripheral to memory.
 pub trait ReadDma<B, RS>: Receive
-    where
-        B: StaticWriteBuffer<Word = RS>,
-        Self: core::marker::Sized + TransferPayload,
+where
+    B: StaticWriteBuffer<Word = RS>,
+    Self: core::marker::Sized + TransferPayload,
 {
     fn read(self, buffer: B) -> Transfer<W, B, Self>;
 }
 
 /// Trait for DMA writing from memory to peripheral.
 pub trait WriteDma<B, TS>: Transmit
-    where
-        B: StaticReadBuffer<Word = TS>,
-        Self: core::marker::Sized + TransferPayload,
+where
+    B: StaticReadBuffer<Word = TS>,
+    Self: core::marker::Sized + TransferPayload,
 {
     fn write(self, buffer: B) -> Transfer<R, B, Self>;
 }

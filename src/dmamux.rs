@@ -27,7 +27,6 @@ pub enum DmaMuxIndex {
 
     I2C3_RX = 12,
     I2C3_TX = 13,
-
     // TODO: add more peripherals
 }
 
