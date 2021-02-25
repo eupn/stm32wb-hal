@@ -1,5 +1,7 @@
 //! Inter-Integrated Circuit (I2C) bus
 
+use core::sync::atomic::{Ordering, self};
+
 use crate::stm32::{I2C1, I2C3};
 use cast::u8;
 
@@ -11,6 +13,9 @@ use crate::hal::blocking::i2c::{Read, Write, WriteIter, WriteIterRead, WriteRead
 use crate::rcc::Rcc;
 use crate::time::Hertz;
 
+use embedded_dma::{StaticReadBuffer, StaticWriteBuffer};
+use crate::dma::{Transmit, TransferPayload, TxDma, Transfer, R, RxDma, W, Receive};
+use crate::dmamux::DmaMuxIndex;
 /// I2C error
 #[derive(Debug)]
 #[non_exhaustive]
@@ -197,6 +202,9 @@ macro_rules! hal {
                             .scldel()
                             .bits(scldel)
                     });
+
+                    // Enable clock stretching
+                    i2c.cr1.modify(|_, w| w.nostretch().clear_bit());
 
                     // Enable the peripheral
                     i2c.cr1.write(|w| w.pe().set_bit());
@@ -391,3 +399,187 @@ hal! {
     I2C1: (i2c1, i2c1en, i2c1rst),
     I2C3: (i2c3, i2c3en, i2c3rst),
 }
+
+// DMA
+
+pub struct I2cPayload<I2C, PINS> {
+    i2c: I2c<I2C, PINS>,
+    address: u8,
+    autoend: bool,
+}
+
+pub type I2cTxDma<I2C, PINS, CHANNEL> = TxDma<I2cPayload<I2C, PINS>, CHANNEL>;
+pub type I2cRxDma<I2C, PINS, CHANNEL> = RxDma<I2cPayload<I2C, PINS>, CHANNEL>;
+
+macro_rules! i2c_dma {
+    ($I2Ci:ident, $Ci:ident, $dmamuxTX:path, $dmamuxRX:path) => {
+        impl<PINS> I2c<$I2Ci, PINS> {
+            pub fn with_tx_dma(self, channel: $Ci, address: u8, autoend: bool) -> I2cTxDma<$I2Ci, PINS, $Ci> {
+                let payload = I2cPayload { i2c: self, address, autoend };
+                I2cTxDma { payload, channel }
+            }
+
+            pub fn with_rx_dma(self, channel: $Ci, address: u8, autoend: bool) -> I2cRxDma<$I2Ci, PINS, $Ci> {
+                let payload = I2cPayload { i2c: self, address, autoend };
+                I2cRxDma { payload, channel }
+            }
+        }
+
+        // TX DMA
+
+        impl<PINS> I2cTxDma<$I2Ci, PINS, $Ci> {
+            pub fn free(self) -> ($Ci, I2c<$I2Ci, PINS>) {
+                (self.channel, self.payload.i2c)
+            }
+        }
+
+        impl<PINS> Transmit for I2cTxDma<$I2Ci, PINS, $Ci> {
+            type TxChannel = $Ci;
+            type ReceivedWord = u8;
+        }
+
+        impl<PINS> TransferPayload for I2cTxDma<$I2Ci, PINS, $Ci> {
+            fn start(&mut self) {
+                self.payload
+                    .i2c
+                    .i2c
+                    .cr1
+                    .modify(|_, w| w.txdmaen().set_bit());
+                self.channel.start();
+            }
+            fn stop(&mut self) {
+                self.payload
+                    .i2c
+                    .i2c
+                    .cr1
+                    .modify(|_, w| w.txdmaen().clear_bit());
+                self.channel.stop();
+            }
+        }
+
+        impl<B, PINS> crate::dma::WriteDma<B, u8> for I2cTxDma<$I2Ci, PINS, $Ci>
+        where
+            B: StaticReadBuffer<Word = u8>,
+        {
+            fn write(mut self, buffer: B) -> Transfer<R, B, Self> {
+                // NOTE(unsafe) We own the buffer now and we won't call other `&mut` on it
+                // until the end of the transfer.
+                let (ptr, len) = unsafe { buffer.static_read_buffer() };
+                atomic::compiler_fence(Ordering::Release);
+                self.channel.set_circular_mode(false);
+                self.channel.listen(crate::dma::Event::TransferComplete);
+                self.channel.select_peripheral($dmamuxTX);
+                self.channel.set_peripheral_address(
+                    unsafe { &(*$I2Ci::ptr()).txdr as *const _ as u32 },
+                    false,
+                );
+                self.channel.set_memory_address(ptr as u32, true);
+                self.channel.set_transfer_length(len);
+                self.channel.set_mem2mem(false);
+                self.channel.set_direction(crate::dma::Direction::FromMemory);
+                self.channel.set_priority_level(crate::dma::Priority::Medium);
+                self.channel.set_word_size(crate::dma::WordSize::BITS8);
+
+                // Prepare to send `bytes`
+                let addr = self.payload.address;
+                let autoend = self.payload.autoend;
+                self.start();
+                let i2c = &mut self.payload.i2c.i2c;
+                i2c.cr2.write(|w| unsafe {
+                    w.sadd()
+                        .bits((addr as u16) << 1)
+                        .rd_wrn()
+                        .clear_bit()
+                        .nbytes()
+                        .bits(len as u8)
+                        .start()
+                        .set_bit()
+                        .autoend()
+                        .bit(autoend)
+                });
+                Transfer::r(buffer, self)
+            }
+        }
+
+        // RX DMA
+
+        impl<PINS> I2cRxDma<$I2Ci, PINS, $Ci> {
+            pub fn free(self) -> ($Ci, I2c<$I2Ci, PINS>) {
+                (self.channel, self.payload.i2c)
+            }
+        }
+
+        impl<PINS> Receive for I2cRxDma<$I2Ci, PINS, $Ci> {
+            type RxChannel = $Ci;
+            type TransmittedWord = u8;
+        }
+
+        impl<PINS> TransferPayload for I2cRxDma<$I2Ci, PINS, $Ci> {
+            fn start(&mut self) {
+                self.payload
+                    .i2c
+                    .i2c
+                    .cr1
+                    .modify(|_, w| w.rxdmaen().set_bit());
+                self.channel.start();
+            }
+            fn stop(&mut self) {
+                self.payload
+                    .i2c
+                    .i2c
+                    .cr1
+                    .modify(|_, w| w.rxdmaen().clear_bit());
+                self.channel.stop();
+            }
+        }
+
+        impl<B, PINS> crate::dma::ReadDma<B, u8> for I2cRxDma<$I2Ci, PINS, $Ci>
+        where
+            B: StaticWriteBuffer<Word = u8>,
+        {
+            fn read(mut self, mut buffer: B) -> Transfer<W, B, Self> {
+                // NOTE(unsafe) We own the buffer now and we won't call other `&mut` on it
+                // until the end of the transfer.
+                let (ptr, len) = unsafe { buffer.static_write_buffer() };
+                atomic::compiler_fence(Ordering::Release);
+                self.channel.set_circular_mode(false);
+                self.channel.listen(crate::dma::Event::TransferComplete);
+                self.channel.select_peripheral($dmamuxRX);
+                self.channel.set_peripheral_address(
+                    unsafe { &(*$I2Ci::ptr()).rxdr as *const _ as u32 },
+                    false,
+                );
+                self.channel.set_memory_address(ptr as u32, true);
+                self.channel.set_transfer_length(len);
+                self.channel.set_mem2mem(false);
+                self.channel.set_direction(crate::dma::Direction::FromPeripheral);
+                self.channel.set_priority_level(crate::dma::Priority::Medium);
+                self.channel.set_word_size(crate::dma::WordSize::BITS8);
+
+                // Prepare to send `bytes`
+                let addr = self.payload.address;
+                let autoend = self.payload.autoend;
+                self.start();
+                let i2c = &mut self.payload.i2c.i2c;
+                i2c.cr2.write(|w| unsafe {
+                    w.sadd()
+                        .bits((addr as u16) << 1)
+                        .rd_wrn()
+                        .set_bit()
+                        .nbytes()
+                        .bits(len as u8)
+                        .start()
+                        .set_bit()
+                        .autoend()
+                        .bit(autoend)
+                });
+                Transfer::w(buffer, self)
+            }
+        }
+    };
+}
+
+use crate::dma::dma1impl::{C1, C2};
+
+i2c_dma!(I2C1, C1, DmaMuxIndex::I2C1_TX, DmaMuxIndex::I2C1_RX);
+i2c_dma!(I2C3, C2, DmaMuxIndex::I2C3_TX, DmaMuxIndex::I2C3_RX);
