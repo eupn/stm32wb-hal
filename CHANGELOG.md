@@ -5,6 +5,11 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## `0.1.6`: 25.02.2021
+
+* Added DMA module
+* Added DMA support for I2C module
+
 ## `0.1.1`: 26.02.2020
 
 * Added `xC-package`, `xE-package` or `xG-package` features to select FLASH memory size
