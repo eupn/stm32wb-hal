@@ -17,6 +17,8 @@ pub use crate::pac as stm32;
 pub mod datetime;
 pub mod delay;
 
+pub mod dma;
+pub mod dmamux;
 pub mod flash;
 pub mod gpio;
 pub mod i2c;
