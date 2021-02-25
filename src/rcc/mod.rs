@@ -226,12 +226,24 @@ impl Rcc {
 
         // Set PLL coefficients
         self.rb.pllcfgr.modify(|_, w| unsafe {
-            w.pllsrc().bits(src_bits)
-                .pllm().bits(pllm)
-                .plln().bits(plln)
-                .pllr().bits(pllr).pllren().set_bit()
-                .pllp().bits(pllp.unwrap_or(1)).pllpen().bit(pllp.is_some())
-                .pllq().bits(pllq.unwrap_or(1)).pllqen().bit(pllq.is_some())
+            w.pllsrc()
+                .bits(src_bits)
+                .pllm()
+                .bits(pllm)
+                .plln()
+                .bits(plln)
+                .pllr()
+                .bits(pllr)
+                .pllren()
+                .set_bit()
+                .pllp()
+                .bits(pllp.unwrap_or(1))
+                .pllpen()
+                .bit(pllp.is_some())
+                .pllq()
+                .bits(pllq.unwrap_or(1))
+                .pllqen()
+                .bit(pllq.is_some())
         });
 
         // Enable PLL and wait for setup
