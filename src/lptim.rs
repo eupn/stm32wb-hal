@@ -157,6 +157,34 @@ impl<M: CountMode> LpTimer<M> {
         })
     }
 
+    /// Clears the given interrupt.
+    pub fn clear_interrupts(&mut self, interrupts: Interrupts) {
+        self.lptim.icr.write(|w| {
+            if interrupts.enc_dir_down {
+                w.downcf().set_bit();
+            }
+            if interrupts.enc_dir_up {
+                w.upcf().set_bit();
+            }
+            if interrupts.autoreload_update_ok {
+                w.arrokcf().set_bit();
+            }
+            if interrupts.compare_update_ok {
+                w.cmpokcf().set_bit();
+            }
+            if interrupts.ext_trig {
+                w.exttrigcf().set_bit();
+            }
+            if interrupts.autoreload_match {
+                w.arrmcf().set_bit();
+            }
+            if interrupts.compare_match {
+                w.cmpmcf().set_bit();
+            }
+            w
+        })
+    }
+
     /// Disables the timer and disables the given interrupts.
     pub fn disable_interrupts(&mut self, interrupts: Interrupts) {
         // IER can only be modified when the timer is disabled
@@ -247,7 +275,7 @@ struct TimeConf {
 }
 
 impl TimeConf {
-    const ARR_MAX: u16 = u16::max_value();
+    const ARR_MAX: u16 = u16::MAX;
 
     /// Calculates prescaler and autoreload value for producing overflows at a rate of
     /// `output_freq`.
