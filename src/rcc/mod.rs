@@ -143,6 +143,28 @@ impl Rcc {
             .csr
             .modify(|_, w| unsafe { w.rfwkpsel().bits(config.rf_wkp_src as u8) });
 
+        // Set LPTIM1 & LPTIM2 clock source
+        self.rb.ccipr.modify(|_, w| unsafe {
+           w.lptim1sel().bits(config.lptim1_src as u8)
+        });
+        self.rb.ccipr.modify(|_, w| unsafe {
+           w.lptim2sel().bits(config.lptim2_src as u8)
+        });
+
+        match config.lptim1_src {
+            LptimClkSrc::Pclk => self.clocks.lptim1 = self.clocks.pclk1(),
+            LptimClkSrc::Lsi => self.clocks.lptim1 = self.clocks.lsi(),
+            LptimClkSrc::Hsi16 => self.clocks.lptim1 = self.clocks.hsi16(),
+            LptimClkSrc::Lse => self.clocks.lptim1 = self.clocks.lse().unwrap(),
+        }
+
+        match config.lptim2_src {
+            LptimClkSrc::Pclk => self.clocks.lptim2 = self.clocks.pclk1(),
+            LptimClkSrc::Lsi => self.clocks.lptim2 = self.clocks.lsi(),
+            LptimClkSrc::Hsi16 => self.clocks.lptim2 = self.clocks.hsi16(),
+            LptimClkSrc::Lse => self.clocks.lptim2 = self.clocks.lse().unwrap(),
+        }
+
         self
     }
 
@@ -324,8 +346,8 @@ pub struct Clocks {
     usart1: Hertz,
     lpuart1: Hertz,
 
-    lptim1: Hertz,
-    lptim2: Hertz,
+    pub(crate) lptim1: Hertz,
+    pub(crate) lptim2: Hertz,
 
     pllclk: Option<Hertz>,
     pllq: Option<Hertz>,
@@ -383,4 +405,16 @@ impl Clocks {
     pub fn lsi(&self) -> Hertz {
         self.lsi
     }
+
+    pub fn lse(&self) -> Option<Hertz> {
+        self.lse
+    }
+
+    pub fn hsi16(&self) -> Hertz {
+        16_000_000.hz()
+    }
+
+    pub fn lptim1(&self) -> Hertz { self.lptim1 }
+
+    pub fn lptim2(&self) -> Hertz { self.lptim2 }
 }

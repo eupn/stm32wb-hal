@@ -19,6 +19,9 @@ pub struct Config {
     pub(crate) usb_src: Option<UsbClkSrc>,
     pub(crate) rtc_src: RtcClkSrc,
     pub(crate) rf_wkp_src: RfWakeupClock,
+
+    pub(crate) lptim1_src: LptimClkSrc,
+    pub(crate) lptim2_src: LptimClkSrc,
 }
 
 impl Default for Config {
@@ -38,6 +41,8 @@ impl Default for Config {
             usb_src: None,
             rtc_src: RtcClkSrc::default(),
             rf_wkp_src: RfWakeupClock::None,
+            lptim1_src: LptimClkSrc::Pclk,
+            lptim2_src: LptimClkSrc::Pclk,
         }
     }
 }
@@ -113,6 +118,16 @@ impl Config {
 
     pub fn rf_wkp_sel(mut self, sel: RfWakeupClock) -> Self {
         self.rf_wkp_src = sel;
+        self
+    }
+
+    pub fn lptim1_src(mut self, sel: LptimClkSrc) -> Self {
+        self.lptim1_src = sel;
+        self
+    }
+
+    pub fn lptim2_src(mut self, sel: LptimClkSrc) -> Self {
+        self.lptim2_src = sel;
         self
     }
 }
@@ -263,6 +278,14 @@ pub enum RtcClkSrc {
     Lse = 0b01,
     Lsi = 0b10,
     HseDiv32 = 0b11,
+}
+
+#[derive(Debug, Copy, Clone)]
+pub enum LptimClkSrc {
+    Pclk = 0b00,
+    Lsi = 0b01,
+    Hsi16 = 0b10,
+    Lse = 0b11,
 }
 
 impl Default for RtcClkSrc {
