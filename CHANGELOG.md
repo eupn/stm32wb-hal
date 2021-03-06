@@ -5,6 +5,15 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## `0.1.10`: 06.03.2021
+
+* i2c: added `DmaTransferError` error
+* i2c: added error/nack interrupt enable/disable/clear methods
+
+## `0.1.9`: 28.02.2021:
+
+* Added LPTIM1 and LPTIM2 support
+
 ## `0.1.6`: 25.02.2021
 
 * Added DMA module

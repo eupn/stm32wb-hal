@@ -29,6 +29,9 @@ pub enum Error {
     // Overrun, // slave mode only
     // Pec, // SMBUS mode only
     Timeout,
+
+    /// An error occurred during DMA transfer.
+    DmaTransferError,
     // Alert, // SMBUS mode only
 }
 
@@ -215,6 +218,26 @@ macro_rules! hal {
                 /// Releases the I2C peripheral and associated pins
                 pub fn free(self) -> ($I2CX, (SCL, SDA)) {
                     (self.i2c, self.pins)
+                }
+
+                /// Enables or disables interrupt for errors
+                pub fn set_error_interrupt(&mut self, enabled: bool) {
+                    self.i2c.cr1.modify(|_, w| w.errie().bit(enabled));
+                }
+
+                /// Clears errors that may trigger interrupt
+                pub fn clear_error_interrupt(&mut self) {
+                    self.i2c.icr.write(|w| w.berrcf().set_bit().arlocf().set_bit());
+                }
+
+                /// Enables or disables event interrupt associated with a NACK
+                pub fn set_nack_interrupt(&mut self, enabled: bool) {
+                    self.i2c.cr1.modify(|_, w| w.nackie().bit(enabled));
+                }
+
+                /// Clears NACK flag that may trigger interrupt
+                pub fn clear_nack_interrupt(&mut self) {
+                    self.i2c.icr.write(|w| w.nackcf().set_bit());
                 }
             }
 
@@ -486,6 +509,7 @@ macro_rules! i2c_dma {
                 atomic::compiler_fence(Ordering::Release);
                 self.channel.set_circular_mode(false);
                 self.channel.listen(crate::dma::Event::TransferComplete);
+                self.channel.listen(crate::dma::Event::TransferError);
                 self.channel.select_peripheral($dmamuxTX);
                 self.channel.set_peripheral_address(
                     unsafe { &(*$I2Ci::ptr()).txdr as *const _ as u32 },
@@ -564,6 +588,7 @@ macro_rules! i2c_dma {
                 atomic::compiler_fence(Ordering::Release);
                 self.channel.set_circular_mode(false);
                 self.channel.listen(crate::dma::Event::TransferComplete);
+                self.channel.listen(crate::dma::Event::TransferError);
                 self.channel.select_peripheral($dmamuxRX);
                 self.channel.set_peripheral_address(
                     unsafe { &(*$I2Ci::ptr()).rxdr as *const _ as u32 },
