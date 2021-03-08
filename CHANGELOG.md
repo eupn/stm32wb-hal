@@ -5,6 +5,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## `0.1.11`: 08.03.2021
+
+* smps: added SMPS enable/disable
+
 ## `0.1.10`: 06.03.2021
 
 * i2c: added `DmaTransferError` error
