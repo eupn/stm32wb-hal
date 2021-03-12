@@ -11,3 +11,6 @@ pub use crate::ipcc::IpccExt as _stm32wb_hal_ipcc_IpccExt;
 pub use crate::gpio::GpioExt as _stm32wb_hal_GpioExt;
 pub use crate::rcc::RccExt as _stm32wb_hal_RccExt;
 pub use crate::time::U32Ext as _stm32wb_hal_time_U32Ext;
+pub use crate::pwm::PwmExt1 as _stm32l4_hal_PwmExt1;
+pub use crate::pwm::PwmExt2 as _stm32l4_hal_PwmExt2;
+

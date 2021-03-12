@@ -32,3 +32,4 @@ pub mod time;
 pub mod tl_mbox;
 pub mod usb;
 pub mod lptim;
+pub mod pwm;
