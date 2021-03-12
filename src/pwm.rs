@@ -4,7 +4,7 @@ use core::marker::PhantomData;
 use core::mem;
 
 use crate::hal;
-use crate::stm32::{TIM1, TIM16, TIM2, TIM17};
+use crate::stm32::{TIM1, TIM16, TIM17, TIM2};
 
 use crate::gpio::gpioa::*;
 use crate::gpio::gpiob::*;
@@ -83,28 +83,23 @@ pins_to_channels_mapping! {
 
 pub trait PwmExt1: Sized {
     fn pwm<PINS, T>(self, _: PINS, frequency: T, rcc: &mut Rcc) -> PINS::Channels
-        where
-            PINS: Pins<Self>,
-            T: Into<Hertz>;
+    where
+        PINS: Pins<Self>,
+        T: Into<Hertz>;
 }
 
 pub trait PwmExt2: Sized {
-    fn pwm<PINS, T>(
-        self,
-        _: PINS,
-        frequency: T,
-        rcc: &mut Rcc,
-    ) -> PINS::Channels
-        where
-            PINS: Pins<Self>,
-            T: Into<Hertz>;
+    fn pwm<PINS, T>(self, _: PINS, frequency: T, rcc: &mut Rcc) -> PINS::Channels
+    where
+        PINS: Pins<Self>,
+        T: Into<Hertz>;
 }
 
 impl PwmExt1 for TIM1 {
     fn pwm<PINS, T>(self, _pins: PINS, freq: T, rcc: &mut Rcc) -> PINS::Channels
-        where
-            PINS: Pins<Self>,
-            T: Into<Hertz>,
+    where
+        PINS: Pins<Self>,
+        T: Into<Hertz>,
     {
         tim1(self, _pins, freq.into(), rcc)
     }
@@ -112,9 +107,9 @@ impl PwmExt1 for TIM1 {
 
 impl PwmExt1 for TIM2 {
     fn pwm<PINS, T>(self, _pins: PINS, freq: T, rcc: &mut Rcc) -> PINS::Channels
-        where
-            PINS: Pins<Self>,
-            T: Into<Hertz>,
+    where
+        PINS: Pins<Self>,
+        T: Into<Hertz>,
     {
         tim2(self, _pins, freq.into(), rcc)
     }

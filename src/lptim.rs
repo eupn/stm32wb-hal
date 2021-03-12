@@ -225,8 +225,8 @@ macro_rules! impl_lptim {
                 type Time = Hertz;
 
                 fn start<T>(&mut self, freq: T)
-                    where
-                        T: Into<Hertz>,
+                where
+                    T: Into<Hertz>,
                 {
                     self.configure(TimeConf::calculate_freq(self.input_freq, freq.into()));
 
@@ -252,8 +252,8 @@ macro_rules! impl_lptim {
                 type Time = MicroSecond;
 
                 fn start<T>(&mut self, period: T)
-                    where
-                        T: Into<MicroSecond>,
+                where
+                    T: Into<MicroSecond>,
                 {
                     self.configure(TimeConf::calculate_period(self.input_freq, period.into()));
 
@@ -304,7 +304,8 @@ macro_rules! impl_lptim {
                     // we panic. Otherwise we use that `psc` to calculate the real `ARR`.
 
                     // Add `ARR_MAX - 1` to round the result upwards
-                    let psc = ((input_freq.0 / output_freq.0) + (u32(Self::ARR_MAX) - 1)) / u32(Self::ARR_MAX);
+                    let psc = ((input_freq.0 / output_freq.0) + (u32(Self::ARR_MAX) - 1))
+                        / u32(Self::ARR_MAX);
                     let psc = psc.next_power_of_two(); // always >= 1
                     assert!(psc <= 128);
 
@@ -365,7 +366,7 @@ macro_rules! impl_lptim {
                 }
             }
         }
-    }
+    };
 }
 
 impl_lptim!(LPTIM1, lptim1, apb1enr1, lptim1en, apb1rstr1, lptim1rst);
