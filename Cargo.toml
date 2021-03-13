@@ -1,6 +1,6 @@
 [package]
 name = "stm32wb-hal"
-version = "0.1.12"
+version = "0.1.13"
 authors = ["eupn <eupn@protonmail.com>"]
 description = "Hardware abstraction layer for the STM32WB55 chips"
 keywords = ["no-std", "stm32wb", "stm32wb55", "embedded", "embedded-hal"]

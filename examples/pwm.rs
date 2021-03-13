@@ -8,6 +8,7 @@ extern crate panic_halt;
 
 use cortex_m_rt::entry;
 use stm32wb_hal::flash::FlashExt;
+use stm32wb_hal::pwm::PwmExt1;
 use stm32wb_hal::rcc::{ApbDivider, Config, HDivider, HseDivider, PllConfig, PllSrc, SysClkSrc};
 use stm32wb_hal::{delay, pac, prelude::*};
 
