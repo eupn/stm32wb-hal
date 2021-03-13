@@ -144,12 +144,12 @@ impl Rcc {
             .modify(|_, w| unsafe { w.rfwkpsel().bits(config.rf_wkp_src as u8) });
 
         // Set LPTIM1 & LPTIM2 clock source
-        self.rb.ccipr.modify(|_, w| unsafe {
-           w.lptim1sel().bits(config.lptim1_src as u8)
-        });
-        self.rb.ccipr.modify(|_, w| unsafe {
-           w.lptim2sel().bits(config.lptim2_src as u8)
-        });
+        self.rb
+            .ccipr
+            .modify(|_, w| unsafe { w.lptim1sel().bits(config.lptim1_src as u8) });
+        self.rb
+            .ccipr
+            .modify(|_, w| unsafe { w.lptim2sel().bits(config.lptim2_src as u8) });
 
         match config.lptim1_src {
             LptimClkSrc::Pclk => self.clocks.lptim1 = self.clocks.pclk1(),
@@ -414,7 +414,11 @@ impl Clocks {
         16_000_000.hz()
     }
 
-    pub fn lptim1(&self) -> Hertz { self.lptim1 }
+    pub fn lptim1(&self) -> Hertz {
+        self.lptim1
+    }
 
-    pub fn lptim2(&self) -> Hertz { self.lptim2 }
+    pub fn lptim2(&self) -> Hertz {
+        self.lptim2
+    }
 }

@@ -5,6 +5,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## `0.1.12`: 13.03.2021
+
+* minimal pwm: added TIM2-based PWM + example
+
 ## `0.1.11`: 08.03.2021
 
 * smps: added SMPS enable/disable
