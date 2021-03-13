@@ -5,6 +5,11 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## `0.1.13`: 14.03.2021
+
+* implement FLASH + example
+* fix PWM example
+
 ## `0.1.12`: 13.03.2021
 
 * minimal pwm: added TIM2-based PWM + example
