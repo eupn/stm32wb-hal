@@ -83,7 +83,7 @@ impl Rcc {
             })
         });
 
-        // Configure SYSCLK mux to use PLL clock
+        // Configure SYSCLK mux to use selected clock
         self.rb
             .cfgr
             .modify(|_r, w| unsafe { w.sw().bits(sysclk_bits) });
