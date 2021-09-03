@@ -81,3 +81,6 @@ codegen-units = 1
 codegen-units = 1
 debug = true
 lto = true
+
+[package.metadata.docs.rs]
+features = ["xG-package", "stm32-usbd"]
