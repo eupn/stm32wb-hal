@@ -51,12 +51,17 @@ impl Rcc {
             SysClkSrc::Msi(_msi_range) => todo!(),
             SysClkSrc::Hsi => todo!(),
             SysClkSrc::HseSys(hse_div) => {
-                self.clocks.hse = Some(HSE_FREQ.hz());
-
-                self.clocks.sysclk = match hse_div {
-                    HseDivider::NotDivided => HSE_FREQ.hz(),
-                    HseDivider::Div2 => (HSE_FREQ / 2).hz(),
+                // Actually turn on and use HSE....
+                let (divided, f_input) = match hse_div {
+                    HseDivider::NotDivided => (false, HSE_FREQ),
+                    HseDivider::Div2 => (true, HSE_FREQ / 2),
                 };
+                self.rb.cr.modify(|_, w| w.hsepre().bit(divided).hseon().set_bit());
+                // Wait for HSE startup
+                while !self.rb.cr.read().hserdy().bit_is_set() {}
+
+                self.clocks.hse = Some(HSE_FREQ.hz());
+                self.clocks.sysclk = f_input.hz();
 
                 0b10
             }
