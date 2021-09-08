@@ -1,5 +1,5 @@
 use crate::rcc::Rcc;
-use stm32wb_pac::IPCC;
+use crate::pac::{self, IPCC};
 
 #[derive(Debug, Copy, Clone)]
 #[repr(C)]
@@ -57,8 +57,8 @@ impl Ipcc {
             .c1cr
             .modify(|_, w| w.rxoie().set_bit().txfie().set_bit());
         unsafe {
-            cortex_m::peripheral::NVIC::unmask(stm32wb_pac::interrupt::IPCC_C1_RX_IT);
-            cortex_m::peripheral::NVIC::unmask(stm32wb_pac::interrupt::IPCC_C1_TX_IT);
+            cortex_m::peripheral::NVIC::unmask(pac::interrupt::IPCC_C1_RX_IT);
+            cortex_m::peripheral::NVIC::unmask(pac::interrupt::IPCC_C1_TX_IT);
         }
     }
 
@@ -196,12 +196,12 @@ impl Ipcc {
 
     pub fn c1_is_active_flag(&self, channel: IpccChannel) -> bool {
         match channel {
-            IpccChannel::Channel1 => self.rb.c1to2sr.read().ch1f().bit(),
-            IpccChannel::Channel2 => self.rb.c1to2sr.read().ch2f().bit(),
-            IpccChannel::Channel3 => self.rb.c1to2sr.read().ch3f().bit(),
-            IpccChannel::Channel4 => self.rb.c1to2sr.read().ch4f().bit(),
-            IpccChannel::Channel5 => self.rb.c1to2sr.read().ch5f().bit(),
-            IpccChannel::Channel6 => self.rb.c1to2sr.read().ch6f().bit(),
+            IpccChannel::Channel1 => self.rb.c1toc2sr.read().ch1f().bit(),
+            IpccChannel::Channel2 => self.rb.c1toc2sr.read().ch2f().bit(),
+            IpccChannel::Channel3 => self.rb.c1toc2sr.read().ch3f().bit(),
+            IpccChannel::Channel4 => self.rb.c1toc2sr.read().ch4f().bit(),
+            IpccChannel::Channel5 => self.rb.c1toc2sr.read().ch5f().bit(),
+            IpccChannel::Channel6 => self.rb.c1toc2sr.read().ch6f().bit(),
         }
     }
 

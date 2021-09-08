@@ -53,7 +53,7 @@ impl Rtc {
                         .clear_bit()
                 });
 
-                rtc.cr.modify(|_, w| unsafe { w.wcksel().bits(0b000) });
+                rtc.cr.modify(|_, w| unsafe { w.wucksel().bits(0b000) });
 
                 rtc.prer.modify(|_, w| unsafe {
                     w.prediv_s()

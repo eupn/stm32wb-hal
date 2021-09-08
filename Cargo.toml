@@ -24,7 +24,7 @@ edition = "2018"
 cortex-m = "0.7"
 embedded-dma = "0.1"
 nb = "0.1.1"
-stm32wb-pac = "0.2"
+stm32wb = "0.13.0"
 as-slice = "0.1"
 bit_field = "0.10.0"
 heapless = "0.5.3"
@@ -56,11 +56,11 @@ optional = true
 
 [features]
 
-xC-package = []
-xE-package = []
-xG-package = []
+xC-package = ["stm32wb/stm32wb55"]
+xE-package = ["stm32wb/stm32wb55"]
+xG-package = ["stm32wb/stm32wb55"]
 
-rt = ["stm32wb-pac/rt"]
+rt = ["stm32wb/rt"]
 
 default = [ "rt" ]
 

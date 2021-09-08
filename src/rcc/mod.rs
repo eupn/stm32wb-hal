@@ -94,7 +94,7 @@ impl Rcc {
             .modify(|_r, w| unsafe { w.sw().bits(sysclk_bits) });
 
         // Wait for SYSCLK to switch
-        while self.rb.cfgr.read().sw() != sysclk_bits {}
+        while self.rb.cfgr.read().sw().bits() != sysclk_bits {}
 
         // Configure CPU1 and CPU2 dividers
         self.clocks.hclk1 = (self.clocks.sysclk.0 / config.cpu1_hdiv.divisor()).hz();
