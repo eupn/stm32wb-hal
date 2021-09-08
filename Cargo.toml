@@ -21,12 +21,11 @@ exclude = [
 edition = "2018"
 
 [dependencies]
-cortex-m = "0.6.2"
+cortex-m = "0.7"
 embedded-dma = "0.1"
 nb = "0.1.1"
-stm32wb-pac = "0.2"
+stm32wb = "0.13.0"
 as-slice = "0.1"
-cortex-m-semihosting = { version = "0.3.5", features = ["jlink-quirks"] }
 bit_field = "0.10.0"
 heapless = "0.5.3"
 
@@ -57,16 +56,16 @@ optional = true
 
 [features]
 
-xC-package = []
-xE-package = []
-xG-package = []
+xC-package = ["stm32wb/stm32wb55"]
+xE-package = ["stm32wb/stm32wb55"]
+xG-package = ["stm32wb/stm32wb55"]
 
-rt = ["stm32wb-pac/rt"]
+rt = ["stm32wb/rt"]
 
 default = [ "rt" ]
 
 [dev-dependencies]
-cortex-m-rtfm = "0.5"
+cortex-m-rtic = {version = "0.5", default-features = false, features = ["cortex-m-7"] }
 panic-halt = "0.2.0"
 panic-semihosting = "0.5.0"
 cortex-m-semihosting = { version = "0.3.5", features = ["jlink-quirks"] }
@@ -82,3 +81,6 @@ codegen-units = 1
 codegen-units = 1
 debug = true
 lto = true
+
+[package.metadata.docs.rs]
+features = ["xG-package", "stm32-usbd"]

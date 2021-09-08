@@ -1,3 +1,4 @@
+use crate::pac;
 use crate::tl_mbox::cmd::{AclDataPacket, AclDataSerial};
 use crate::tl_mbox::consts::TlPacketType;
 use crate::tl_mbox::{PacketHeader, TL_EVT_HEADER_SIZE};
@@ -171,7 +172,7 @@ impl Drop for EvtBox {
     fn drop(&mut self) {
         use crate::ipcc::IpccExt;
 
-        let mut ipcc = unsafe { stm32wb_pac::Peripherals::steal() }
+        let mut ipcc = unsafe { pac::Peripherals::steal() }
             .IPCC
             .constrain();
         super::mm::evt_drop(self.ptr, &mut ipcc);
